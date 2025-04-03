@@ -96,7 +96,7 @@ int main() {
         std::cerr << "Bind error " << strerror(errno) << std::endl;
         return 1;
     }
-	std::cout << "Bind on port " << PORT << std::endl;
+	std::cout << "Bind Successful on port " << PORT << std::endl;
 
     if (listen(server_fd, SOMAXCONN) < 0) {
         std::cerr << "Listen failed" << std::endl;
@@ -105,20 +105,28 @@ int main() {
 
     int epoll_fd = epoll_create(MAX_EVENTS);
     if (epoll_fd == -1) {
-        std::cerr << "Epoll create failed" << std::endl;
+        std::cerr << "Failed to create epoll" << std::endl;
         return 1;
     }
 
     epoll_event event{};
     event.events = EPOLLIN;
     event.data.fd = server_fd;
-    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event);
+    if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event))
+	{
+		std::cerr << "Failed to add file descriptor to epoll" << std::endl;
+		if (close(epoll_fd)){
+			std::cerr << "Failed to close epoll file descriptor" << std::endl;
+			return 1;
+		}
+		return 1;
+	}
 
     epoll_event events[MAX_EVENTS];
 
     while (true) {
-        int num_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-        for (int i = 0; i < num_ready; ++i) {
+        int event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        for (int i = 0; i < event_count; ++i) {
             if (events[i].data.fd == server_fd) {
                 sockaddr_in client_addr;
                 socklen_t client_len = sizeof(client_addr);
@@ -135,7 +143,15 @@ int main() {
         }
     }
 
-    close(server_fd);
-    close(epoll_fd);
+    if(close(server_fd))
+	{
+		std::cerr << "Failed to close server file descriptor" << std::endl;
+		return 1;
+	}
+    if(close(epoll_fd))
+	{
+		std::cerr << "Failed to close epoll file descriptor" << std::endl;
+		return 1;
+	}
     return 0;
 }
