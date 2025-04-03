@@ -60,98 +60,107 @@
 // }
 
 
-#include <iostream>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <cstring>
+// #include <iostream>
+// #include <sys/epoll.h>
+// #include <sys/socket.h>
+// #include <netinet/in.h>
+// #include <unistd.h>
+// #include <cstring>
 
-#define PORT 8080
-#define MAX_EVENTS 10
+// #define PORT 8080
+// #define MAX_EVENTS 10
 
-void handle_client(int client_fd) {
-	char buffer[1024];
-	read(client_fd, buffer, sizeof(buffer));
-	std::cout << buffer << std::endl;
-    const char response[] = "HTTP/1.1 200 Ok\r\nContent-Type: text/html\r\n\r\n<html><h1>HELLO WORLD!</h1></html>";
-    send(client_fd, response, sizeof(response), 0);
-    close(client_fd);
-}
+// void handle_client(int client_fd) {
+// 	char buffer[1024];
+// 	read(client_fd, buffer, sizeof(buffer));
+// 	std::cout << buffer << std::endl;
+//     const char response[] = "HTTP/1.1 200 Ok\r\nContent-Type: text/html\r\n\r\n<html><h1>HELLO WORLD!</h1></html>";
+//     send(client_fd, response, sizeof(response), 0);
+//     close(client_fd);
+// }
 
-int main() {
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	std::cout << "Socket created succesfully "  << server_fd << std::endl;
-    if (server_fd == -1) {
-        std::cerr << "Failed to create socket" << std::endl;
-        return 1;
-    }
+// int main() {
+//     int server_fd = socket(AF_INET, SOCK_STREAM, 0); // tcp socket
+// 	std::cout << "Socket created succesfully "  << server_fd << std::endl;
+//     if (server_fd == -1) {
+//         std::cerr << "Failed to create socket" << std::endl;
+//         return 1;
+//     }
 
-    sockaddr_in server_addr{};
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+// 	// attach socket to the port
+//     sockaddr_in server_addr{};
+//     server_addr.sin_family = AF_INET;
+//     server_addr.sin_addr.s_addr = INADDR_ANY;
+//     server_addr.sin_port = htons(PORT);
 
-    if (bind(server_fd, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Bind error " << strerror(errno) << std::endl;
-        return 1;
-    }
-	std::cout << "Bind Successful on port " << PORT << std::endl;
+//     if (bind(server_fd, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+//         std::cerr << "Bind error " << strerror(errno) << std::endl;
+//         return 1;
+//     }
+// 	std::cout << "Bind Successful on port " << PORT << std::endl;
 
-    if (listen(server_fd, SOMAXCONN) < 0) {
-        std::cerr << "Listen failed" << std::endl;
-        return 1;
-    }
+//     if (listen(server_fd, SOMAXCONN) < 0) {
+//         std::cerr << "Listen failed" << std::endl;
+//         return 1;
+//     }
 
-    int epoll_fd = epoll_create(MAX_EVENTS);
-    if (epoll_fd == -1) {
-        std::cerr << "Failed to create epoll" << std::endl;
-        return 1;
-    }
+//     int epoll_fd = epoll_create(MAX_EVENTS);
+//     if (epoll_fd == -1) {
+//         std::cerr << "Failed to create epoll" << std::endl;
+//         return 1;
+//     }
 
-    epoll_event event{};
-    event.events = EPOLLIN;
-    event.data.fd = server_fd;
-    if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event))
-	{
-		std::cerr << "Failed to add file descriptor to epoll" << std::endl;
-		if (close(epoll_fd)){
-			std::cerr << "Failed to close epoll file descriptor" << std::endl;
-			return 1;
-		}
-		return 1;
-	}
+//     epoll_event event{};
+//     event.events = EPOLLIN;
+//     event.data.fd = server_fd;
+//     if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event))
+// 	{
+// 		std::cerr << "Failed to add file descriptor to epoll" << std::endl;
+// 		if (close(epoll_fd)){
+// 			std::cerr << "Failed to close epoll file descriptor" << std::endl;
+// 			return 1;
+// 		}
+// 		return 1;
+// 	}
 
-    epoll_event events[MAX_EVENTS];
+//     epoll_event events[MAX_EVENTS];
 
-    while (true) {
-        int event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-        for (int i = 0; i < event_count; ++i) {
-            if (events[i].data.fd == server_fd) {
-                sockaddr_in client_addr;
-                socklen_t client_len = sizeof(client_addr);
-                int client_fd = accept(server_fd, (sockaddr*)&client_addr, &client_len);
-                if (client_fd >= 0) {
-                    epoll_event client_event{};
-                    client_event.events = EPOLLIN;
-                    client_event.data.fd = client_fd;
-                    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &client_event);
-                }
-            } else {
-                handle_client(events[i].data.fd);
-            }
-        }
-    }
+//     while (true) {
+//         int event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+//         for (int i = 0; i < event_count; ++i) {
+//             if (events[i].data.fd == server_fd) {
+//                 sockaddr_in client_addr;
+//                 socklen_t client_len = sizeof(client_addr);
+//                 int client_fd = accept(server_fd, (sockaddr*)&client_addr, &client_len);
+//                 if (client_fd >= 0) {
+//                     epoll_event client_event{};
+//                     client_event.events = EPOLLIN;
+//                     client_event.data.fd = client_fd;
+//                     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &client_event);
+//                 }
+//             } else {
+//                 handle_client(events[i].data.fd);
+//             }
+//         }
+//     }
 
-    if(close(server_fd))
-	{
-		std::cerr << "Failed to close server file descriptor" << std::endl;
-		return 1;
-	}
-    if(close(epoll_fd))
-	{
-		std::cerr << "Failed to close epoll file descriptor" << std::endl;
-		return 1;
-	}
-    return 0;
+//     if(close(server_fd))
+// 	{
+// 		std::cerr << "Failed to close server file descriptor" << std::endl;
+// 		return 1;
+// 	}
+//     if(close(epoll_fd))
+// 	{
+// 		std::cerr << "Failed to close epoll file descriptor" << std::endl;
+// 		return 1;
+// 	}
+//     return 0;
+// }
+
+
+#include "../TcpServer.hpp"
+
+int main()
+{
+	TcpServer server = TcpServer("127.0.0.1", 8080);
 }
