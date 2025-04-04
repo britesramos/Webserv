@@ -4,22 +4,30 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h> // sockaddr
+#include <sys/types.h>
 #include <unistd.h>
+#include <cstring>
+#include <netdb.h>
 
+
+#define BUFFER_SIZE 4096
 
 class TcpServer{
 	private:
 		int m_socket;
 		int m_new_socket;
 		struct sockaddr_in m_socket_address;
-		int m_len_socket_address;
-		int m_port;
-		std::string m_ipaddress; // create a converter to net byte Htonl or Hton
+		unsigned int m_len_socket_address;
 
 		int startserver();
+		void acceptConnection(int &new_socket);
 		void closeserver();
-	public:
-		TcpServer(std::string ip_address, int port); // will received from the config file
+		void sendResponse();
+		public:
+		TcpServer(std::string ip_address, std::string port); // will received from the config file
 		~TcpServer();
+
+		void startListen();
 };
+
 #endif

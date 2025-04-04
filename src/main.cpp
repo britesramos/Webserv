@@ -162,5 +162,6 @@
 
 int main()
 {
-	TcpServer server = TcpServer("127.0.0.1", 8080);
+	TcpServer server = TcpServer("127.0.0.1", "8080");
+	server.startListen();
 }
