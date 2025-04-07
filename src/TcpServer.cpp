@@ -13,14 +13,15 @@ static struct sockaddr_in init_socket_address(std::string ip_address, std::strin
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-	int status = getaddrinfo(ip_address.c_str(), port.c_str(), &hints, &result); // test: "!!!invalid_host$$$" for ip and abc123 for port
+	// std::cout << port << std::endl;
+	int status = getaddrinfo(ip_address.c_str() , port.c_str(), &hints, &result); // test: "!!!invalid_host$$$" for ip and abc123 for port
 	if (status != 0 || result == nullptr) {
 		std::cerr << "getaddrinfo failed: " << gai_strerror(status) << std::endl;
+		exit (1);
 	} else {
 		std::memcpy(&socket_address, result->ai_addr, sizeof(struct sockaddr_in));
 		std::cout << "this is the value inside sockaddress: " << socket_address.sin_addr.s_addr << std::endl;
 		std::cout << "this is the value inside sockaddress port: " << socket_address.sin_port << std::endl;
-		std::cout << "this is the value inside status: " << status << std::endl;
 		freeaddrinfo(result);
 	}
 	return socket_address;
@@ -28,20 +29,24 @@ static struct sockaddr_in init_socket_address(std::string ip_address, std::strin
 
 TcpServer::TcpServer(std::string ip_address, std::string port) : m_socket(), m_new_socket(), m_socket_address()
 {
-	std::cout << "this is the construct" << std::endl;
+	// std::cout << "this is the construct" << std::endl;
 	this->m_socket_address = init_socket_address(ip_address, port);
 	this->m_len_socket_address = sizeof(m_socket_address);
 	std::cout << "this is the value inside sockaddress out function: " << this->m_socket_address.sin_addr.s_addr << std::endl;
 	if (startserver())
 	{
-		std::cerr << "========== Failed to start server ==========" << std::endl;
+		std::cerr << "Failed to start server" << std::endl;
 		exit (1);
 	}
 }
 
 TcpServer::~TcpServer()
 {
-	closeserver();
+	std::cout << "this is the fd closed "<< m_socket << std::endl;
+	close(m_socket);
+	close(m_new_socket);
+	exit(0);
+	// closeserver(); // is it necessary to create a close function?
 }
 
 int TcpServer::startserver()
@@ -98,7 +103,7 @@ void TcpServer::startListen()
 
 		sendResponse();
 
-		// close(m_new_socket);
+		close(m_new_socket);
 	}
 }
 
@@ -138,10 +143,10 @@ void TcpServer::sendResponse()
 	}
 }
 
-void TcpServer::closeserver()
-{
-	std::cout << "this is the fd closed "<< m_socket << std::endl;
-	close(m_socket);
-	close(m_new_socket);
-	exit(0);
-}
+// void TcpServer::closeserver()
+// {
+// 	std::cout << "this is the fd closed "<< m_socket << std::endl;
+// 	close(m_socket);
+// 	close(m_new_socket);
+// 	exit(0);
+// }

@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <cstring>
 #include <netdb.h>
+#include <signal.h>
+
 
 
 #define BUFFER_SIZE 4096
@@ -21,7 +23,7 @@ class TcpServer{
 
 		int startserver();
 		void acceptConnection(int &new_socket);
-		void closeserver();
+		// void closeserver();
 		void sendResponse();
 		public:
 		TcpServer(std::string ip_address, std::string port); // will received from the config file

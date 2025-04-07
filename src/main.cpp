@@ -160,8 +160,25 @@
 
 #include "../TcpServer.hpp"
 
+
+void interrupt_helper(int sig)
+{
+	std::cout << '\n';
+	std::cout << "\n		I was killed by the Ctrl+C\n" << std::endl;
+	// TODO close fds function with clean stuff
+	exit(sig + 128);
+}
+
 int main()
 {
-	TcpServer server = TcpServer("127.0.0.1", "8080");
+	// function to handle Signal
+	struct sigaction signalInterrupter;
+	signalInterrupter.sa_handler = interrupt_helper;
+	sigemptyset(&signalInterrupter.sa_mask);
+	signalInterrupter.sa_flags = 0;
+	sigaction(SIGINT, &signalInterrupter, 0);
+
+	
+	TcpServer server = TcpServer("localhost", "8080");
 	server.startListen();
 }
