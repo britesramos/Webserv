@@ -2,6 +2,7 @@
 #define TCPSERVER_HPP
 
 #include <iostream>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h> // sockaddr
 #include <sys/types.h>

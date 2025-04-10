@@ -164,12 +164,25 @@
 void interrupt_helper(int sig)
 {
 	std::cout << '\n';
-	std::cout << "\n		I was killed by the Ctrl+C\n" << std::endl;
+	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
 	// TODO close fds function with clean stuff
 	exit(sig + 128);
 }
 
-int main()
+static bool is_file_extension_correct(std::string input)
+{
+	if (input.substr(input.find_last_of(".") + 1) == "conf")
+	{
+		return (true);
+	}
+	else
+	{
+		std::cout << "Please, provide \".conf\" file" << std::endl;
+		return (false);
+	}
+}
+
+int main(int argc, char **argv)
 {
 	// function to handle Signal
 	struct sigaction signalInterrupter;
@@ -178,7 +191,18 @@ int main()
 	signalInterrupter.sa_flags = 0;
 	sigaction(SIGINT, &signalInterrupter, 0);
 
-	
+	if (argc != 2)
+	{
+		std::cout << "	Incorrect amout of arguments" << std::endl;
+		std::cout << "	 Provide: ./webserv [file].config" << std::endl;
+		return (1);
+	}
+	if (is_file_extension_correct(argv[1]) == false)
+		return (1);
+	else
+	{
+		//check if it can be open and if it is not empty
+	}
 	TcpServer server = TcpServer("localhost", "8080");
 	server.startListen();
 }
