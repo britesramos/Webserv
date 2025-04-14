@@ -65,6 +65,7 @@ int main(int argc, char **argv)
 		if (is_possible_use_file(argv[1]) == false)
 			return (1);
 	}
-	TcpServer server = TcpServer("localhost", "8080");
+	//Configuration file parsing HERE.
+	TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
 	server.startListen();
 }
