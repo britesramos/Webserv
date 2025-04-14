@@ -13,6 +13,7 @@ OBJ_DIR = obj
 SRC_DIR = src
 
 SOURCE = main.cpp \
+		TcpServer.cpp \
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))
 OBJECTS = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
