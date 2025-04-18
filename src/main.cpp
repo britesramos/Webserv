@@ -77,6 +77,12 @@ int main(int argc, char **argv)
     config.setErrorPage(500, "/error_pages/500.html");
 	std::cout << "host: " << config.getHost() << std::endl;
 	std::cout << "port: " << config.getPort() << std::endl;
-	TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
-	server.startListen();
+	std::cout << "server name: " << config.getServerName() << std::endl;
+	std::cout << "max client size: " << config.getMaxClientSize() << std::endl;
+	std::cout << "error page 4-4: " << config.getErrorPage(404) << std::endl;
+	std::cout << "error page 500: " << config.getErrorPage(500) << std::endl;
+	if (config.getErrorPage(100) == "") // doesnt have this number page on the map
+		std::cout << "empty bitch" << std::endl;
+	// TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
+	// server.startListen();
 }
