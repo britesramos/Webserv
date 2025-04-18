@@ -1,4 +1,5 @@
-#include "../TcpServer.hpp"
+#include "../include/TcpServer.hpp"
+#include "../include/ServerConfig.hpp"
 
 void interrupt_helper(int sig)
 {
@@ -66,6 +67,16 @@ int main(int argc, char **argv)
 			return (1);
 	}
 	//Configuration file parsing HERE.
+	ServerConfig config;
+
+	config.setHost("127.0.0.1");
+    config.setPort("8080");
+    config.setServerName("example.com");
+    config.setMaxClientSize(5000000);
+    config.setErrorPage(404, "/error_pages/404.html");
+    config.setErrorPage(500, "/error_pages/500.html");
+	std::cout << "host: " << config.getHost() << std::endl;
+	std::cout << "port: " << config.getPort() << std::endl;
 	TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
 	server.startListen();
 }
