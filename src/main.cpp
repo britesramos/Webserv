@@ -31,12 +31,23 @@ int main(int argc, char **argv)
 		return (1);
 	else
 	{
-		if (file.is_possible_use_file(argv[1]) == false) // need to change to be == false
+		if (file.is_possible_use_file(argv[1]) == false)
 			return (1);
 	}
-	const std::vector<std::string>& lines = file.getLines();
-    for (size_t i = 0; i < lines.size(); ++i) {
-        std::cout << "Line " << i << ": " << lines[i] << "#!"<< std::endl;
+	// const std::vector<std::string>& lines = file.getLines();
+    // for (size_t i = 0; i < lines.size(); ++i) {
+    //     std::cout << "Line " << i << ": " << lines[i] << "#!"<< std::endl;
+    // }
+
+	std::vector<std::string> allTokens;
+
+	for (const std::string& line : file.getLines()) {
+		std::vector<std::string> lineTokens = file.tokenize_line(line);
+		allTokens.insert(allTokens.end(), lineTokens.begin(), lineTokens.end()); // add to full token list
+	}
+
+	for (size_t i = 0; i < allTokens.size(); ++i) {
+        std::cout << "Tokens " << i << ": " << allTokens[i] << "#!"<< std::endl;
     }
 	// ServerConfig config;
 

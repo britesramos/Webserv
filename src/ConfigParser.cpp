@@ -80,3 +80,38 @@ const std::vector<std::string>& ConfigParser::getLines() const
 {
 	return (this->lines);
 }
+
+std::vector<std::string> ConfigParser::tokenize_line(const std::string& line)
+{
+    std::vector<std::string> token_list;
+    std::string token;
+	int i = 0;
+
+	while (line[i]) {
+        char c = line[i];
+
+        if (std::isspace(c)) {
+            if (!token.empty()) {
+                token_list.push_back(token);
+                token.clear();
+            }
+        } else if (c == '{' || c == '}' || c == '=' || c == ';') {
+            if (!token.empty()) {
+                token_list.push_back(token);
+                token.clear();
+            }
+            token_list.push_back(std::string(1, c)); // transform 1 char into a string to put on the vector
+        } else {
+			printf("this is char:   %c\n", c);
+            token += c;
+        }
+		printf("this is the token at the moment: %s \n", token.c_str());
+		i++;
+    }
+
+    if (!token.empty()) { // checks if all the tokens was add to the token list
+        token_list.push_back(token);
+    }
+
+    return token_list;
+}
