@@ -1,4 +1,5 @@
 #include "../include/TcpServer.hpp"
+#include "../include/ClientRequest.hpp"
 
 // TODO Create a function to print cerr
 
@@ -72,26 +73,28 @@ void TcpServer::startListen()
 		std::cout << "Socket listen failed" << std::endl;
 		exit (1);
 	}
-
-	uint32_t ip_host_order = ntohl(m_socket_address.sin_addr.s_addr);
-
-	std::cout << "\n*** Listening on ADDRESS: " 
-		<< ((ip_host_order >> 24) & 0xFF) << "."
-			<< ((ip_host_order >> 16) & 0xFF) << "."
-			<< ((ip_host_order >> 8) & 0xFF) << "."
-			<< (ip_host_order & 0xFF)
 	
-		<< " PORT: " << ntohs(this->m_socket_address.sin_port) 
-		<< " ***\n\n" << std::endl;
-
+	uint32_t ip_host_order = ntohl(m_socket_address.sin_addr.s_addr);
+	
+	std::cout << "\n*** Listening on ADDRESS: " 
+	<< ((ip_host_order >> 24) & 0xFF) << "."
+	<< ((ip_host_order >> 16) & 0xFF) << "."
+	<< ((ip_host_order >> 8) & 0xFF) << "."
+	<< (ip_host_order & 0xFF)
+	
+	<< " PORT: " << ntohs(this->m_socket_address.sin_port) 
+	<< " ***\n\n" << std::endl;
+	
 	int bytesReceived;
-
+	
 	while (true)
 	{
 		std::cout << "====== Waiting for a new connection ======\n\n\n" << std::endl;
 		acceptConnection(this->m_new_socket);
-
-		char buffer[BUFFER_SIZE] = {0};
+		
+		std::string request; //Used to parse the request, to send to parseClientRequest(request)
+		ClientRequest clientRequest(this->m_new_socket); //Create clientRequest object to parse the request
+		char buffer[BUFFER_SIZE] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 		bytesReceived = read(this->m_new_socket, buffer, BUFFER_SIZE);
 		if (bytesReceived < 0)
 		{
@@ -100,10 +103,14 @@ void TcpServer::startListen()
 		}
 
 		std::cout << "------ Received Request from client ------\n\n" << std::endl;
-
+		std::cout << buffer << std::endl; //temporary, should be removed
+		request = buffer;
+		//Parsing client request:
+		if (clientRequest.parseClientRequest(request) < 0)
+			std::cout << "Error parsing client request" << std::endl;
 		sendResponse();
 
-		close(m_new_socket);
+		// close(m_new_socket);    // To be closed in the class clientRequest destructor
 	}
 }
 

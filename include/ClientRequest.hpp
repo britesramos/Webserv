@@ -18,21 +18,56 @@
 
 //GET and DELETE requests have the same structure and dont have a body.
 
+
+
+//!!!!!!!!!!!!!If the request doesnt follow the HTTP standard, you can reject it with an appropriate error message (400 Bad Request).!!!!!!!!!!!
+
 class ClientRequest {
 	private:
-		std::string _http_method_cr; //GET POST DELETE
-		std::string _url_path_cr; // /index.html
-		std::string _http_version_cr; //HTTP/1.1
-		std::string _host_cr; //localhost:8080
-		std::string _port_cr; //8080
-		std::string _agent_cr; //browser or a tool like curl
-		std::string _accept_cr;	//Indicates the type of content that the client can process
+		int			_ClientRequest_socket; //socket descriptor
+		std::string _ClientRequest_http_method; //GET POST DELETE
+		std::string _ClientRequest_url_path; // /index.html
+		std::string _ClientRequest_http_version; //HTTP/1.1
+		std::string _ClientRequest_host; //localhost:8080
+		std::string _ClientRequest_port; //8080
+		std::string _ClientRequest_agent; //browser or a tool like curl
+		std::string _ClientRequest_accept;	//Indicates the type of content that the client can process
 		/****For POST requests, the request includes a body with data to be sent to the server: ***/
-		std::string _body_format_cr; 
-		std::string _body_cr; 
-		std::string _body_length_cr;
+		std::string _ClientRequest_POST_body_content; 
+		std::string _ClientRequest_POST_body_type; 
+		std::string _ClientRequest_POST_body_length;
 
 	public:
-		ClientRequest();
+		ClientRequest(int socket_fd);
 		~ClientRequest();
+
+		//Parsing methods
+		int parseClientRequest(std::string request);
+
+		//Getters
+		int get_ClientRequest_socket();
+		std::string get_ClientRequest_http_method();
+		std::string get_ClientRequest_url_path();
+		std::string get_ClientRequest_http_version();
+		std::string get_ClientRequest_host();
+		std::string get_ClientRequest_port();
+		std::string get_ClientRequest_agent();
+		std::string get_ClientRequest_accept();
+		std::string get_ClientRequest_POST_body_content();
+		std::string get_ClientRequest_POST_body_type();
+		std::string get_ClientRequest_POST_body_length();
+
+		//Setters
+		void set_ClientRequest_socket(int socket_fd);
+		void set_ClientRequest_http_method(std::string http_method);
+		void set_ClientRequest_url_path(std::string url_path);
+		void set_ClientRequest_http_version(std::string http_version);
+		void set_ClientRequest_host(std::string host);
+		void set_ClientRequest_port(std::string port);
+		void set_ClientRequest_agent(std::string agent);
+		void set_ClientRequest_accept(std::string accept);
+		void set_ClientRequest_POST_body_content(std::string body_content);
+		void set_ClientRequest_POST_body_type(std::string body_type);
+		void set_ClientRequest_POST_body_length(std::string body_length);
+
 };
