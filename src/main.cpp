@@ -1,6 +1,5 @@
 #include "../include/TcpServer.hpp"
 #include "../include/ServerConfig.hpp"
-#include "../include/ServerManager.hpp"
 #include "../include/ConfigParser.hpp"
 
 void interrupt_helper(int sig)
@@ -34,21 +33,23 @@ int main(int argc, char **argv)
 		if (file.is_possible_use_file(argv[1]) == false)
 			return (1);
 	}
+	if (file.is_map_filled(file.getLines()) == false)
+		return (1);
 	// const std::vector<std::string>& lines = file.getLines();
     // for (size_t i = 0; i < lines.size(); ++i) {
-    //     std::cout << "Line " << i << ": " << lines[i] << "#!"<< std::endl;
+    //     std::cout << "Line " << i << ": " << lines[i] << std::endl;
     // }
 
-	std::vector<std::string> allTokens;
+	// std::vector<std::string> allTokens;
 
-	for (const std::string& line : file.getLines()) {
-		std::vector<std::string> lineTokens = file.tokenize_line(line);
-		allTokens.insert(allTokens.end(), lineTokens.begin(), lineTokens.end()); // add to full token list
-	}
+	// for (const std::string& line : file.getLines()) {
+	// 	std::vector<std::string> lineTokens = file.tokenize_line(line);
+	// 	allTokens.insert(allTokens.end(), lineTokens.begin(), lineTokens.end()); // add to full token list
+	// }
 
-	for (size_t i = 0; i < allTokens.size(); ++i) {
-        std::cout << "Tokens " << i << ": " << allTokens[i] << "#!"<< std::endl;
-    }
+	// for (size_t i = 0; i < allTokens.size(); ++i) {
+    //     std::cout << "Tokens " << i << ": " << allTokens[i] << "#!"<< std::endl;
+    // }
 	// ServerConfig config;
 
 	// config.setHost("127.0.0.1");

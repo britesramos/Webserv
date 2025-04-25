@@ -17,10 +17,10 @@ static void remove_comments(std::string &str)
 {
 	int i = 0;
 	int start = 0;
+
 	while(str[i] != '\0')
 	{
-		if (str[i] == '#')
-		{
+		if (str[i] == '#' && start == 0){
 			start = i;
 			str.erase(start, str.length());
 			return ;
@@ -29,20 +29,16 @@ static void remove_comments(std::string &str)
 	}
 }
 
-static void trim_spaces(std::string &str)
+void trim_spaces(std::string &str)
 {
-	int begin = 0;
+	size_t start = str.find_first_not_of(" \t");
+	size_t end = str.find_last_not_of(" \t");
 
-	// begin
-	while(isspace(str[begin]))
-		begin++;
-	str.erase(0, begin);
-
-	// end
-	int end = str.length();
-	while(end > 0 && isspace(str[end]))
-		end--;
-	str.erase(end);
+	if (start == std::string::npos) {
+		str.clear();
+		return ;
+	}
+	str = str.substr(start, end - start + 1);
 }
 
 bool ConfigParser::is_possible_use_file(std::string input)
@@ -60,8 +56,8 @@ bool ConfigParser::is_possible_use_file(std::string input)
 		else {
 			while(std::getline(infile, line))
 			{
-				trim_spaces(line);
 				remove_comments(line);
+				trim_spaces(line);
 				if (!line.empty())
 					this->lines.push_back(line);
 			}
@@ -81,37 +77,88 @@ const std::vector<std::string>& ConfigParser::getLines() const
 	return (this->lines);
 }
 
-std::vector<std::string> ConfigParser::tokenize_line(const std::string& line)
+// std::vector<std::string> ConfigParser::tokenize_line(const std::string& line)
+// {
+//     std::vector<std::string> token_list;
+//     std::string token;
+// 	int i = 0;
+
+// 	while (line[i]) {
+//         char c = line[i];
+
+//         if (std::isspace(c)) {
+//             if (!token.empty()) {
+//                 token_list.push_back(token);
+//                 token.clear();
+//             }
+//         } else if (c == '{' || c == '}' || c == '=' || c == ';') {
+//             if (!token.empty()) {
+//                 token_list.push_back(token);
+//                 token.clear();
+//             }
+//             token_list.push_back(std::string(1, c)); // transform 1 char into a string to put on the vector
+//         } else {
+// 			printf("this is char:   %c\n", c);
+//             token += c;
+//         }
+// 		printf("this is the token at the moment: %s \n", token.c_str());
+// 		i++;
+//     }
+
+//     if (!token.empty()) { // checks if all the tokens was add to the token list
+//         token_list.push_back(token);
+//     }
+
+//     return token_list;
+// }
+
+
+void ConfigParser::addServer(ServerConfig &server)
 {
-    std::vector<std::string> token_list;
-    std::string token;
-	int i = 0;
+	servers.push_back(server);
+}
 
-	while (line[i]) {
-        char c = line[i];
+const std::vector<ServerConfig>& ConfigParser::getServer() const
+{
+	return (this->servers);
+}
 
-        if (std::isspace(c)) {
-            if (!token.empty()) {
-                token_list.push_back(token);
-                token.clear();
-            }
-        } else if (c == '{' || c == '}' || c == '=' || c == ';') {
-            if (!token.empty()) {
-                token_list.push_back(token);
-                token.clear();
-            }
-            token_list.push_back(std::string(1, c)); // transform 1 char into a string to put on the vector
-        } else {
-			printf("this is char:   %c\n", c);
-            token += c;
-        }
-		printf("this is the token at the moment: %s \n", token.c_str());
-		i++;
-    }
+// TODO: ADD parameteres to the class ServerConfig, because if they are in a unordered list the same key with different keys will be deleted
+bool ConfigParser::is_map_filled(const std::vector<std::string>& lines)
+{
+	std::unordered_map<std::string, std::string> parameteres;
 
-    if (!token.empty()) { // checks if all the tokens was add to the token list
-        token_list.push_back(token);
-    }
-
-    return token_list;
+	for (size_t i = 0; i < lines.size(); ++i) {
+		std::string str = lines[i];
+		if (str.find("==") != std::string::npos){
+			std::cout << "Invalid format, provide only one '=' "<< std::endl;
+			return false;
+		}
+		if (str.find('=') != std::string::npos)
+		{
+			std::string key = str.substr(0, str.find('='));
+			std::string value = str.substr(str.find_first_of('=') + 1);
+			trim_spaces(key);
+			trim_spaces(value);
+			if (value.find(';') == std::string::npos){
+				std::cout << "Invalid format, end with ;"<< std::endl;
+				return false;
+			}
+			if (key.find("error_page") != std::string::npos){
+				std::string word = "error_page";
+				std::size_t start = key.find(word) + word.length();
+				key = key.substr(start);
+				trim_spaces(key);
+			}
+			parameteres[key] = value;
+		}
+		else
+		{
+			parameteres[str] = "";
+		}
+	}
+	for (auto it = parameteres.begin(); it != parameteres.end(); ++it) {
+		std::cout << it->first << ":" << it->second << std::endl;
+	}
+	return true;
 }

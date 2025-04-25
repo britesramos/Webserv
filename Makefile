@@ -16,7 +16,6 @@ SOURCE = main.cpp \
 		ConfigParser.cpp \
 		TcpServer.cpp \
 		ServerConfig.cpp \
-		ServerManager.cpp \
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))
 OBJECTS = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
