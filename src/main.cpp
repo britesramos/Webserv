@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 		if (file.is_possible_use_file(argv[1]) == false)
 			return (1);
 	}
-	if (file.is_map_filled(file.getLines()) == false)
+	if (file.is_server_config_load(file.getLines()) == false)
 		return (1);
 	// const std::vector<std::string>& lines = file.getLines();
     // for (size_t i = 0; i < lines.size(); ++i) {

@@ -22,7 +22,8 @@ class ConfigParser {
 		bool is_possible_use_file(std::string input);
 		const std::vector<std::string>& getLines() const;
 
-		bool is_map_filled(const std::vector<std::string>& lines);
+		// bool is_map_filled(const std::vector<std::string>& lines);
+		bool is_server_config_load(const std::vector<std::string>& lines);
 
 };
 
