@@ -77,42 +77,6 @@ const std::vector<std::string>& ConfigParser::getLines() const
 	return (this->lines);
 }
 
-// std::vector<std::string> ConfigParser::tokenize_line(const std::string& line)
-// {
-//     std::vector<std::string> token_list;
-//     std::string token;
-// 	int i = 0;
-
-// 	while (line[i]) {
-//         char c = line[i];
-
-//         if (std::isspace(c)) {
-//             if (!token.empty()) {
-//                 token_list.push_back(token);
-//                 token.clear();
-//             }
-//         } else if (c == '{' || c == '}' || c == '=' || c == ';') {
-//             if (!token.empty()) {
-//                 token_list.push_back(token);
-//                 token.clear();
-//             }
-//             token_list.push_back(std::string(1, c)); // transform 1 char into a string to put on the vector
-//         } else {
-// 			printf("this is char:   %c\n", c);
-//             token += c;
-//         }
-// 		printf("this is the token at the moment: %s \n", token.c_str());
-// 		i++;
-//     }
-
-//     if (!token.empty()) { // checks if all the tokens was add to the token list
-//         token_list.push_back(token);
-//     }
-
-//     return token_list;
-// }
-
-
 void ConfigParser::addServer(ServerConfig &server)
 {
 	servers.push_back(server);
@@ -123,45 +87,39 @@ const std::vector<ServerConfig>& ConfigParser::getServer() const
 	return (this->servers);
 }
 
-// TODO: ADD parameteres to the class ServerConfig, because if they are in a unordered list the same key with different value will be deleted
-// bool ConfigParser::is_map_filled(const std::vector<std::string>& lines)
-// {
-// 	std::unordered_map<std::string, std::string> parameteres;
+static bool is_host_valid(std::string value)
+{
+	if (value == "localhost")
+		return true;
+	else
+	{
+		int i = 0;
+		while(value[i])
+		{
+			if (value[i] == '.' && value[0] != '.')
+				i++;
+			else if (isdigit(value[i]))
+				i++;
+			else
+				return false;
+		}
+		if (value[i - 1] == '.')
+			return false;
+	}
+	return true;
+}
 
-// 	for (size_t i = 0; i < lines.size(); ++i) {
-// 		std::string str = lines[i];
-// 		if (str.find("==") != std::string::npos){
-// 			std::cout << "Invalid format, provide only one '=' "<< std::endl;
-// 			return false;
-// 		}
-// 		if (str.find('=') != std::string::npos)
-// 		{
-// 			std::string key = str.substr(0, str.find('='));
-// 			std::string value = str.substr(str.find_first_of('=') + 1);
-// 			trim_spaces(key);
-// 			trim_spaces(value);
-// 			if (value.find(';') == std::string::npos){
-// 				std::cout << "Invalid format, end with ;"<< std::endl;
-// 				return false;
-// 			}
-// 			if (key.find("error_page") != std::string::npos){
-// 				std::string word = "error_page";
-// 				std::size_t start = key.find(word) + word.length();
-// 				key = key.substr(start);
-// 				trim_spaces(key);
-// 			}
-// 			parameteres[key] = value;
-// 		}
-// 		else
-// 		{
-// 			parameteres[str] = "";
-// 		}
-// 	}
-// 	for (auto it = parameteres.begin(); it != parameteres.end(); ++it) {
-// 		std::cout << it->first << ":" << it->second << std::endl;
-// 	}
-// 	return true;
-// }
+static bool is_digit_valid(std::string value)
+{
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (!isdigit(value[i]))
+		{
+			return false;
+		}
+	}
+	return true;
+}
 
 bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 {
@@ -204,16 +162,47 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 					std::size_t start = key.find(word) + word.length();
 					key = key.substr(start);
 					trim_spaces(key);
+					if (!is_digit_valid(key))
+					{
+						std::cerr << "Not a valid, error page number" << std::endl;
+						return false;
+					}
 					current.setErrorPage(std::stoi(key), value);
 				}
-				else if (key.find("host") == 0)
+				else if (key == "host")
+				{
+					if (!is_host_valid(value))
+					{
+						std::cerr << "Not a valid, Host number" << std::endl;
+						return false;
+					}
 					current.setHost(value);
-				else if (key.find("port") == 0)
+				}
+				else if (key == "port")
+				{
+					if (!is_digit_valid(value))
+					{
+						std::cerr << "Not a valid, Port number" << std::endl;
+						return false;
+					}
+					if (value.empty())
+					{
+						std::cerr << "Invalid config, port cannot be empty." << std::endl;
+						return false;
+					}
 					current.setPort(value);
-				else if (key.find ("server_name") == 0)
+				}
+				else if (key == "server_name")
 					current.setServerName(value);
-				else if (key.find("max_client_size") == 0)
+				else if (key == "max_client_size")
+				{
+					if (!is_digit_valid(value))
+					{
+						std::cerr << "Not a valid, client_size number" << std::endl;
+						return false;
+					}
 					current.setMaxClientSize(std::stoi(value));
+				}
 			}
 			if (str.find('}') != std::string::npos)
 			{

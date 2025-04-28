@@ -11,7 +11,7 @@ ServerConfig::ServerConfig()
 
 ServerConfig::~ServerConfig()
 {
-	std::cout << "Deleting construct." << std::endl;
+
 }
 
 void ServerConfig::setServerName(std::string input)
@@ -26,7 +26,7 @@ void ServerConfig::setHost(std::string input)
 
 void ServerConfig::setPort(std::string input)
 {
-	this->server_name = input;
+	this->port = input;
 }
 
 void ServerConfig::setMaxClientSize(int input)
