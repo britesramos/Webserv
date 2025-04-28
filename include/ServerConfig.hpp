@@ -28,5 +28,6 @@ class ServerConfig{
 		int getMaxClientSize() const;
 		std::string getErrorPage(int code) const;
 
+		void print() const;
 };
 #endif

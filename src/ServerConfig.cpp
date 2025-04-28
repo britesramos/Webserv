@@ -4,8 +4,9 @@ ServerConfig::ServerConfig()
 {
 	this->host = "localhost";
 	this->port = "8080";
-	this->server_name = "";
+	this->server_name = "YarnServ";
 	this->max_client_size = 1000000;
+	// add default error_pages
 }
 
 ServerConfig::~ServerConfig()
@@ -65,4 +66,21 @@ std::string ServerConfig::getErrorPage(int code) const
 		return (temp->second);
 	else
 		return ("");
+}
+
+void ServerConfig::print() const {
+	std::cout << "Host: " << host << "\n";
+	std::cout << "Port: " << port << "\n";
+	std::cout << "Server_name: " << server_name << "\n";
+	std::cout << "Max client size: " << max_client_size << "\n";
+
+	std::cout << "Error Pages:\n";
+	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+		std::cout << "  " << it->first << " -> " << it->second << "\n";
+	}
+
+	// std::cout << "Locations:\n";
+	// for (size_t i = 0; i < locations.size(); ++i) {
+	// 	locations[i].print(); // assuming LocationConfig also has a print()
+	// }
 }

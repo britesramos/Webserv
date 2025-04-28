@@ -191,22 +191,34 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 				trim_spaces(key);
 				trim_spaces(value);
 				if (value.find(';') == std::string::npos){
-					std::cout << "Invalid format, end with ;"<< std::endl;
+					std::cout << "Invalid format, end of string need to have ;"<< std::endl;
 					return false;
+				}
+				else
+				{
+					size_t pos = value.find(';');
+					value.erase(pos, 1);
 				}
 				if (key.find("error_page") != std::string::npos){
 					std::string word = "error_page";
 					std::size_t start = key.find(word) + word.length();
 					key = key.substr(start);
 					trim_spaces(key);
+					current.setErrorPage(std::stoi(key), value);
 				}
-				// parameteres[key] = value;
+				else if (key.find("host") == 0)
+					current.setHost(value);
+				else if (key.find("port") == 0)
+					current.setPort(value);
+				else if (key.find ("server_name") == 0)
+					current.setServerName(value);
+				else if (key.find("max_client_size") == 0)
+					current.setMaxClientSize(std::stoi(value));
 			}
-			std::cout << "Entrei aqui\n" << std::endl;
 			if (str.find('}') != std::string::npos)
 			{
 				close_curly_b++;
-				this->servers.push_back(current);
+				addServer(current);
 				in_server_block = false;
 			}
 		}
@@ -216,7 +228,6 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 			return false;
 		}
 	}
-	std::cout << "open: " << open_curly_b << " and close: " << close_curly_b << std::endl;
 	if (open_curly_b != close_curly_b){
 		std::cerr << "Check your open and close curly brackets" << std::endl;
 		return false;
