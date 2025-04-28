@@ -15,7 +15,7 @@
 
 
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 4096 //This could be an issue
 
 class TcpServer{
 	private:
