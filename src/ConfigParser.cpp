@@ -135,6 +135,7 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 			in_server_block = true;
 			current = ServerConfig();
 			open_curly_b++;
+			continue ;
 		}
 		if (in_server_block == true)
 		{
@@ -157,21 +158,9 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 					size_t pos = value.find(';');
 					value.erase(pos, 1);
 				}
-				if (key.find("error_page") != std::string::npos){
-					std::string word = "error_page";
-					std::size_t start = key.find(word) + word.length();
-					key = key.substr(start);
-					trim_spaces(key);
-					if (!is_digit_valid(key))
-					{
-						std::cerr << "Not a valid, error page number" << std::endl;
-						return false;
-					}
-					current.setErrorPage(std::stoi(key), value);
-				}
-				else if (key == "host")
+				if (key == "host")
 				{
-					if (!is_host_valid(value))
+					if (!is_host_valid(value) || value.empty())
 					{
 						std::cerr << "Not a valid, Host number" << std::endl;
 						return false;
@@ -180,35 +169,62 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 				}
 				else if (key == "port")
 				{
-					if (!is_digit_valid(value))
+					if (!is_digit_valid(value) || value.empty())
 					{
-						std::cerr << "Not a valid, Port number" << std::endl;
-						return false;
-					}
-					if (value.empty())
-					{
-						std::cerr << "Invalid config, port cannot be empty." << std::endl;
+						std::cerr << "Not a valid, Port" << std::endl;
 						return false;
 					}
 					current.setPort(value);
 				}
 				else if (key == "server_name")
+				{
+					if (value.empty())
+					{
+						std::cerr << "Server_name cannot be set as empty" << std::endl;
+						return false;
+					}
 					current.setServerName(value);
+				}
 				else if (key == "max_client_size")
 				{
-					if (!is_digit_valid(value))
+					if (!is_digit_valid(value) || value.empty())
 					{
 						std::cerr << "Not a valid, client_size number" << std::endl;
 						return false;
 					}
 					current.setMaxClientSize(std::stoi(value));
 				}
+				else if (key.find("error_page") != std::string::npos){
+					std::string word = "error_page";
+					std::size_t start = key.find(word) + word.length();
+					key = key.substr(start);
+					trim_spaces(key);
+					if (!is_digit_valid(key) || key.empty() || value.empty())
+					{
+						std::cerr << "Not a valid, error page" << std::endl;
+						return false;
+					}
+					current.setErrorPage(std::stoi(key), value);
+				}
+				else
+				{
+					std::cerr << "Check your config file, there is a UNKNOW variable on the server block;" << std::endl;
+					// std::cout << "this is the str: " << str << std::endl;
+					return false;
+				}
+				// std::cout << "Assigning key: " << key << " value: " << value << std::endl;
 			}
-			if (str.find('}') != std::string::npos)
+			else if (str.find('}') != std::string::npos)
 			{
 				close_curly_b++;
 				addServer(current);
 				in_server_block = false;
+			}
+			else
+			{
+				std::cerr << "Check your config file, there is a INVALID Element on the server block;" << std::endl;
+				// std::cout << "this is the str: " << str << std::endl;
+				return false;
 			}
 		}
 		else
