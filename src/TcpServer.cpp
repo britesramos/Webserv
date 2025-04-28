@@ -1,5 +1,5 @@
 #include "../include/TcpServer.hpp"
-#include "../include/ClientRequest.hpp"
+#include "../include/Client.hpp"
 
 // TODO Create a function to print cerr
 
@@ -90,10 +90,10 @@ void TcpServer::startListen()
 	while (true)
 	{
 		std::cout << "====== Waiting for a new connection ======\n\n\n" << std::endl;
-		acceptConnection(this->m_new_socket);
-		
 		std::string request; //Used to parse the request, to send to parseClientRequest(request)
-		// ClientRequest clientRequest(this->m_new_socket); //Create clientRequest object to parse the request
+		acceptConnection(this->m_new_socket);
+		Client client(this->m_new_socket); //Create client object to parse the client request
+		
 		char buffer[BUFFER_SIZE] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 		bytesReceived = read(this->m_new_socket, buffer, BUFFER_SIZE);
 		if (bytesReceived < 0)
@@ -101,19 +101,20 @@ void TcpServer::startListen()
 			std::cerr << "Failed to read bytes from client socket connection" << std::endl;
 			exit (1);
 		}
-
+		
 		std::cout << "------ Received Request from client ------\n\n" << std::endl;
 		std::cout << buffer << std::endl; //temporary, should be removed
 		request = buffer;
 		//Parsing client request:
-		// if (clientRequest.parseClientRequest(request) < 0)
-		// 	std::cout << "Error parsing client request" << std::endl;
+		if (client.parseClientRequest(request) < 0)
+			std::cout << "Error parsing client request" << std::endl;
 		sendResponse();
-
-		// close(m_new_socket);    // To be closed in the class clientRequest destructor
+		std::cout << "------ Client Request parsed ------\n\n" << std::endl;
+		for (auto it = client.get_RequestMap().begin(); it != client.get_RequestMap().end(); ++it){
+			std::cout << it->first << " => " << it->second << std::endl;
+		}
 	}
 }
-
 void TcpServer::acceptConnection(int &new_socket)
 {
 	std::cout << "====== Connection Accepted =====" << std::endl;
