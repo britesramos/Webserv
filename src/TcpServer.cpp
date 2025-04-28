@@ -93,7 +93,7 @@ void TcpServer::startListen()
 		acceptConnection(this->m_new_socket);
 		
 		std::string request; //Used to parse the request, to send to parseClientRequest(request)
-		ClientRequest clientRequest(this->m_new_socket); //Create clientRequest object to parse the request
+		// ClientRequest clientRequest(this->m_new_socket); //Create clientRequest object to parse the request
 		char buffer[BUFFER_SIZE] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 		bytesReceived = read(this->m_new_socket, buffer, BUFFER_SIZE);
 		if (bytesReceived < 0)
@@ -106,8 +106,8 @@ void TcpServer::startListen()
 		std::cout << buffer << std::endl; //temporary, should be removed
 		request = buffer;
 		//Parsing client request:
-		if (clientRequest.parseClientRequest(request) < 0)
-			std::cout << "Error parsing client request" << std::endl;
+		// if (clientRequest.parseClientRequest(request) < 0)
+		// 	std::cout << "Error parsing client request" << std::endl;
 		sendResponse();
 
 		// close(m_new_socket);    // To be closed in the class clientRequest destructor
