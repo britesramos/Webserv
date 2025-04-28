@@ -14,6 +14,7 @@ ServerConfig::~ServerConfig()
 
 }
 
+// Setters
 void ServerConfig::setServerName(std::string input)
 {
 	this->server_name = input;
@@ -39,7 +40,13 @@ void ServerConfig::setErrorPage(int error_number, std::string page)
 	this->error_pages[error_number] = page;
 }
 
+void ServerConfig::addLocation(const Location& location)
+{
+	this->location_blocks.push_back(location);
+}
 
+
+// Getters
 std::string ServerConfig::getHost() const
 {
 	return (this->host);
@@ -68,6 +75,11 @@ std::string ServerConfig::getErrorPage(int code) const
 		return ("");
 }
 
+const std::vector<Location>& ServerConfig::getLocations() const
+{
+	return (this->location_blocks);
+}
+
 void ServerConfig::print() const {
 	std::cout << "Host: " << host << "\n";
 	std::cout << "Port: " << port << "\n";
@@ -79,8 +91,8 @@ void ServerConfig::print() const {
 		std::cout << "  " << it->first << " -> " << it->second << "\n";
 	}
 
-	// std::cout << "Locations:\n";
-	// for (size_t i = 0; i < locations.size(); ++i) {
-	// 	locations[i].print(); // assuming LocationConfig also has a print()
-	// }
+	std::cout << "Locations:\n";
+	for (size_t i = 0; i < location_blocks.size(); ++i) {
+		location_blocks[i].print();
+	}
 }

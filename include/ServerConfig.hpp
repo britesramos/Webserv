@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include "../include/Location.hpp"
 
 class ServerConfig{
 	private:
@@ -10,6 +11,7 @@ class ServerConfig{
 		std::string port;
 		std::string server_name;
 		int max_client_size;
+		std::vector<Location> location_blocks;
 		std::map<int, std::string> error_pages;
 	public:
 		ServerConfig();
@@ -20,13 +22,15 @@ class ServerConfig{
 		void setServerName(std::string input);
 		void setMaxClientSize(int input);
 		void setErrorPage(int error_number, std::string page);
+		void addLocation(const Location& location);
 
-	// Getters
+		// Getters
 		std::string getHost() const;
 		std::string getPort() const;
 		std::string getServerName() const;
 		int getMaxClientSize() const;
 		std::string getErrorPage(int code) const;
+		const std::vector<Location>& getLocations() const;
 
 		void print() const;
 };
