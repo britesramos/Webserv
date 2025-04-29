@@ -22,16 +22,17 @@ class ConfigParser {
 		const std::vector<std::string>& getLines() const;
 
 		bool is_server_config_load(const std::vector<std::string>& lines);
-		// bool is_static_content_load(std::string str, ServerConfig& server, bool in_location_block);
+		bool is_values_and_keys_set(std::string str, ServerConfig& current_server);
+		bool is_static_content_load(std::string str, Location& current_location);
 
 		// Utils
 		void remove_comments(std::string &str);
 		void trim_spaces(std::string &str);
 		bool is_host_valid(std::string value);
 		bool is_digit_valid(std::string value);
-		// std::vector<std::string> split_str(const std::string& str, char delimiter);
-		std::vector<std::string> split_by_whitespace(const std::string& str);
 		bool is_value_empty(std::string key, std::string value);
+		bool is_semicolon_present(std::string& value);
+		std::vector<std::string> split_by_whitespace(const std::string& str);
 
 
 };

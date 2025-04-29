@@ -71,3 +71,46 @@ bool ConfigParser::is_value_empty(std::string key, std::string value)
 	}
 	return false;
 }
+
+std::vector<std::string> ConfigParser::split_by_whitespace(const std::string& str) {
+	std::vector<std::string> tokens;
+	size_t i = 0;
+
+	while (i < str.length()) {
+		while (i < str.length() && (str[i] == ' ' || str[i] == '\t') )
+			i++;
+
+		size_t start = i;
+
+		while (i < str.length() && !(str[i] == ' ' || str[i] == '\t'))
+			i++;
+
+		if (start < i)
+			tokens.push_back(str.substr(start, i - start));
+	}
+	return tokens;
+}
+
+bool ConfigParser::is_semicolon_present(std::string& value)
+{
+	size_t pos = value.find(';');
+
+	if (pos == std::string::npos){
+		std::cout << "Invalid format, end of string need to have ; "<< std::endl;
+		return false;
+	}
+	else
+	{
+		size_t end = value.size() - 1;
+
+		while (end > 0)
+		{
+			if (value[end] == ';')
+			{
+				value.erase(end, 1);
+			}
+			end--;
+		}
+	}
+	return true;
+}
