@@ -61,47 +61,8 @@ const std::vector<ServerConfig>& ConfigParser::getServer() const
 
 // bool ConfigParser::is_static_content_load(std::string str, ServerConfig& server, bool in_location_block)
 // {
-// 	Location current_location = Location();
-// 	// int open_curly_b = 0;
-// 	// int close_curly_b = 0;
 
 
-// 	std::cout << "location str line: " << str << std::endl;
-// 	if (str.find("location") != std::string::npos && str.find('{') != std::string::npos)
-// 	{
-// 		std::string path;
-// 		std::string word = "location";
-// 		std::size_t start = str.find(word) + word.length();
-// 		path = str.substr(start);
-// 		if (path.empty())
-// 		{
-// 			std::cerr << "Not a valid, error page" << std::endl;
-// 			return false;
-// 		}
-// 		size_t pos = path.find('{');
-// 		// open_curly_b++;
-// 		path.erase(pos, 1);
-// 		trim_spaces(path);
-// 		current_location.setPath(path);
-// 		std::cout << "this is path: " << path << std::endl;
-// 	}
-// 	// else if (str.find('}') != std::string::npos)
-// 	// {
-// 	// 	// close_curly_b++;
-// 	// 	server.addLocation(current);
-// 	// 	in_location_block = false;
-// 	// }
-// 	// else
-// 	// {
-// 	// 	std::cerr << "Check your config file, there is a INVALID Element on the location block;" << std::endl;
-// 	// 	std::cout << "this is the str: " << str << std::endl;
-// 	// 	return false;
-// 	// }
-// 	// if (open_curly_b != close_curly_b){
-// 	// 	std::cerr << "Check your open and close curly brackets from location" << std::endl;
-// 	// 	return false;
-// 	// }
-// 	return true;
 // }
 
 
@@ -132,16 +93,8 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 			if (str.find("location") != std::string::npos && str.find('{') != std::string::npos)
 			{
 				in_location_block = true;
-				// if(!is_static_content_load(str, current, in_location_block))
-				// {
-				// 	std::cerr << "Misconfiguration on the Static Content part." << std::endl;
-				// 	return false;
-				// }
-				// continue;
-
 				current_location = Location();
-			
-				std::cout << "location str line: " << str << std::endl;
+
 				std::string path;
 				std::string word = "location";
 				std::size_t start = str.find(word) + word.length();
@@ -155,8 +108,8 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 					std::cerr << "Not a valid, Location path" << std::endl;
 					return false;
 				}
-				std::cout << "this is path: " << path << std::endl;
 				current_location.setPath(path);
+				continue;
 			}
 			if (in_location_block == false)
 			{
@@ -195,11 +148,8 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 					}
 					else if (key == "server_name")
 					{
-						if (value.empty())
-						{
-							std::cerr << "Server_name cannot be set as empty" << std::endl;
+						if (is_value_empty(key, value))
 							return false;
-						}
 						current.setServerName(value);
 					}
 					else if (key == "max_client_size")
@@ -225,11 +175,9 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 					}
 					else
 					{
-						std::cerr << "Check your config file, there is a UNKNOW variable on the server block;" << std::endl;
-						// std::cout << "this is the str: " << str << std::endl;
+						std::cerr << "Check your config file, there is a UNKNOW variable on the = SERVER = block;" << std::endl;
 						return false;
 					}
-					// std::cout << "Assigning key: " << key << " value: " << value << std::endl;
 				}
 				else if (str.find('}') != std::string::npos)
 				{
@@ -239,8 +187,7 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 				}
 				else
 				{
-					std::cerr << "Check your config file, there is a INVALID Element on the server block;" << std::endl;
-					std::cout << "this is the str: " << str << std::endl;
+					std::cerr << "Check your config file, there is a INVALID Element on the = SERVER = block;" << std::endl;
 					return false;
 				}
 			}
@@ -250,10 +197,86 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 				current.addLocation(current_location);
 				in_location_block = false;
 			}
+			else
+			{
+				if (str.find('=') != std::string::npos)
+				{
+					std::string key = str.substr(0, str.find('='));
+					std::string value = str.substr(str.find_first_of('=') + 1);
+					trim_spaces(key);
+					trim_spaces(value);
+					if (value.find(';') == std::string::npos){
+						std::cout << "Invalid format, end of string need to have ; in - LOCATION - block;"<< std::endl;
+						return false;
+					}
+					else
+					{
+						size_t pos = value.find(';');
+						value.erase(pos, 1);
+					}
+					if (key == "root")
+					{
+						if (is_value_empty(key, value))
+							return false;
+						current_location.setRoot(value);
+					}
+					else if (key == "index")
+					{
+						if (is_value_empty(key, value))
+							return false;
+						current_location.setIndex(value);
+					}
+					else if (key == "autoindex")
+					{
+						if (is_value_empty(key, value))
+							return false;
+						bool enable;
+						if (value == "off")
+						{
+							enable = OFF;
+						}
+						else
+							enable = ON;
+						current_location.setAutoindex(enable);
+					}
+					else if (key == "allowed_methods")
+					{
+						if (is_value_empty(key, value))
+							return false;
+						std::vector<std::string> temp = split_by_whitespace(value);;
+						for(size_t i = 0; i < temp.size(); ++i)
+						{
+							if(temp[i].empty())
+							{
+								std::cerr << "Invalid config to Allowed Methods in - LOCATION - block" << std::endl;
+								return false;
+							}
+							current_location.set_methods(temp[i]);
+						}
+					}
+					else if (key == "return")
+					{
+						if (is_value_empty(key, value))
+							return false;
+						std::vector<std::string> temp = split_by_whitespace(value);
+						if(!is_digit_valid(temp[0]) || temp[0].empty() ||  temp[1].empty() || !temp[2].empty())
+						{
+							std::cerr << "Invalid values from Return in  - LOCATION - block" << std::endl;
+							return false;
+						}
+						current_location.setReturnvalue(std::stoi(temp[0]), temp[1]);
+					}
+				}
+				else
+				{
+					std::cerr << "Invalid values inside - LOCATION - block" << std::endl;
+					return false;
+				}
+			}
 		}
 		else
 		{
-			std::cout << "Invalid Configuration, please provide server block" << std::endl;
+			std::cout << "Invalid Configuration, please provide = SERVER = block" << std::endl;
 			return false;
 		}
 	}
@@ -265,29 +288,25 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 }
 
 
+std::vector<std::string> ConfigParser::split_by_whitespace(const std::string& str) {
+	std::vector<std::string> tokens;
+	size_t i = 0;
 
-// if (str.find('=') != std::string::npos)
-// {
-// 	std::string key = str.substr(0, str.find('='));
-// 	std::string value = str.substr(str.find_first_of('=') + 1);
-// 	trim_spaces(key);
-// 	trim_spaces(value);
-// 	if (value.find(';') == std::string::npos){
-// 		std::cout << "Invalid format, end of string need to have ;"<< std::endl;
-// 		return false;
-// 	}
-// 	else
-// 	{
-// 		size_t pos = value.find(';');
-// 		value.erase(pos, 1);
-// 	}
-// 	std::cout << "this is the key " << key << std::endl;
-// 	if (key == "root")
-// 	{
-// 		if (value.empty())
-// 		{
-// 			std::cerr << "root cannot be set as empty" << std::endl;
-// 			return false;
-// 		}
-// 		current_location.setRoot(value);
-// 	}
+	while (i < str.length()) {
+		// Skip leading whitespace
+		while (i < str.length() && (str[i] == ' ' || str[i] == '\t') )
+			i++;
+
+		// Find the start of the next token
+		size_t start = i;
+
+		// Find the end of the token
+		while (i < str.length() && !(str[i] == ' ' || str[i] == '\t'))
+			i++;
+
+		if (start < i)
+			tokens.push_back(str.substr(start, i - start));
+	}
+
+	return tokens;
+}

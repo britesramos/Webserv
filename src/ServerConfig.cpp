@@ -93,6 +93,7 @@ void ServerConfig::print() const {
 
 	std::cout << "Locations:\n";
 	for (size_t i = 0; i < location_blocks.size(); ++i) {
+		std::cout << "-- Location Block " << i << " --\n";
 		location_blocks[i].print();
 	}
 }

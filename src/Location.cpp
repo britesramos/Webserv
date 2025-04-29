@@ -79,10 +79,15 @@ std::string Location::getReturnvalue(int code) const
 void Location::print() const {
 	std::cout << "  Location: " << path << "\n";
 	std::cout << "  Root: " << root << "\n";
+	std::cout << "  Autoindex: " << autoindex << "\n";
 	std::cout << "  Allowed Methods: ";
 	for (size_t i = 0; i < allowed_methods.size(); ++i) {
 		std::cout << allowed_methods[i];
 		if (i != allowed_methods.size() - 1) std::cout << ", ";
+	}
+	std::cout << "\nReturn:\n";
+	for (std::map<int, std::string>::const_iterator it = return_value.begin(); it != return_value.end(); ++it) {
+		std::cout << "  " << it->first << " -> " << it->second << "\n";
 	}
 	std::cout << "\n";
 }

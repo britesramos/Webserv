@@ -29,6 +29,10 @@ class ConfigParser {
 		void trim_spaces(std::string &str);
 		bool is_host_valid(std::string value);
 		bool is_digit_valid(std::string value);
+		// std::vector<std::string> split_str(const std::string& str, char delimiter);
+		std::vector<std::string> split_by_whitespace(const std::string& str);
+		bool is_value_empty(std::string key, std::string value);
+
 
 };
 
