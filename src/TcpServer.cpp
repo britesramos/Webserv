@@ -28,10 +28,10 @@ static struct sockaddr_in init_socket_address(std::string ip_address, std::strin
 	return socket_address;
 }
 
-TcpServer::TcpServer(std::string ip_address, std::string port) : m_socket(), m_new_socket(), m_socket_address()
+TcpServer::TcpServer(ServerConfig config) : m_socket(), m_new_socket(), m_socket_address()
 {
 	// std::cout << "this is the construct" << std::endl;
-	this->m_socket_address = init_socket_address(ip_address, port);
+	this->m_socket_address = init_socket_address(config.getHost(), config.getPort());
 	this->m_len_socket_address = sizeof(m_socket_address);
 	std::cout << "this is the value inside sockaddress out function: " << this->m_socket_address.sin_addr.s_addr << std::endl;
 	if (startserver())
@@ -48,6 +48,26 @@ TcpServer::~TcpServer()
 	close(m_new_socket);
 	exit(0);
 	// closeserver(); // is it necessary to create a close function?
+}
+
+TcpServer::TcpServer(const TcpServer &copy)
+{
+	this->m_len_socket_address = copy.m_len_socket_address;
+	this->m_new_socket = copy.m_new_socket;
+	this->m_socket = copy.m_socket;
+	this->m_socket_address = copy.m_socket_address;
+}
+
+TcpServer& TcpServer::operator=(const TcpServer &copy)
+{
+	if(this != &copy)
+	{
+		this->m_len_socket_address = copy.m_len_socket_address;
+		this->m_new_socket = copy.m_new_socket;
+		this->m_socket = copy.m_socket;
+		this->m_socket_address = copy.m_socket_address;
+	}
+	return *this;
 }
 
 int TcpServer::startserver()

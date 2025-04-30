@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <iostream>
 #include <fstream>
-
+#include "ServerConfig.hpp"
 
 
 #define BUFFER_SIZE 4096 //This could be an issue
@@ -29,8 +29,11 @@ class TcpServer{
 		// void closeserver();
 		void sendResponse();
 		public:
-		TcpServer(std::string ip_address, std::string port); // will received from the config file
+		TcpServer(ServerConfig config); // will received from the config file
 		~TcpServer();
+
+		TcpServer(const TcpServer &copy);
+		TcpServer& operator=(const TcpServer &copy);
 
 		void startListen();
 };
