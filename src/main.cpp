@@ -82,6 +82,6 @@ int main(int argc, char **argv)
 	// file.getServer();
 	// if (config.getErrorPage(100) == "") // doesnt have this number page on the map
 	// 	std::cout << "empty bitch" << std::endl;
-	// TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
-	// server.startListen();
+	TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
+	server.startListen();
 }

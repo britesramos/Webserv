@@ -18,6 +18,7 @@ SOURCE = main.cpp \
 		TcpServer.cpp \
 		ServerConfig.cpp \
 		Location.cpp \
+		Client.cpp \
 
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))
