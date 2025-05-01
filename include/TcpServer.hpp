@@ -12,8 +12,7 @@
 #include <signal.h>
 #include <iostream>
 #include <fstream>
-
-
+#include <sstream>
 
 #define BUFFER_SIZE 4096 //This could be an issue
 

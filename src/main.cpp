@@ -50,7 +50,6 @@ int main(int argc, char **argv)
 	sigemptyset(&signalInterrupter.sa_mask);
 	signalInterrupter.sa_flags = 0;
 	sigaction(SIGINT, &signalInterrupter, 0);
-
 	if (argc != 2)
 	{
 		std::cerr << "--- Incorrect amout of arguments ---" << std::endl;

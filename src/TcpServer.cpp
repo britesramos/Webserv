@@ -108,8 +108,10 @@ void TcpServer::startListen()
 		//Parsing client request:
 		if (client.parseClientRequest(request) < 0)
 			std::cout << "Error parsing client request" << std::endl;
+		
 		sendResponse();
 		std::cout << "------ Client Request parsed ------\n\n" << std::endl;
+		//Request map(printing):
 		for (auto it = client.get_RequestMap().begin(); it != client.get_RequestMap().end(); ++it){
 			std::cout << it->first << " => " << it->second << std::endl;
 		}
@@ -125,31 +127,81 @@ void TcpServer::acceptConnection(int &new_socket)
 		exit (1);
 	}
 }
-
+//TO DO: rethink the sendResponse function, it shoudl handle the response for all the requests
 void TcpServer::sendResponse()
 {
-	std::string htmlBody = "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
-    
-    std::string response = "HTTP/1.1 200 OK\r\n";
-    response += "Content-Type: text/html\r\n";
-    response += "Content-Length: " + std::to_string(htmlBody.size()) + "\r\n";
-    response += "Connection: close\r\n";
-    response += "\r\n";
-    response += htmlBody;
+	static int i = 0;
+	i++;
+	std::string htmlBody;
+	if (i > 1) {
+		std::ifstream file("yarncrochet.jpg"); // Open the yarncrochet.jpg file
+		if (!file.is_open())
+		{
+			std::cerr << "Error: Could not open home_page.html" << std::endl;
+			std::string errorBody = "<!DOCTYPE html><html lang=\"en\"><body><h1>500 Internal Server Error</h1><p>Could not load the requested file.</p></body></html>";
+			std::string response = "HTTP/1.1 500 Internal Server Error\r\n";
+			response += "Content-Type: text/html\r\n";
+			response += "Content-Length: " + std::to_string(errorBody.size()) + "\r\n";
+			response += "Connection: close\r\n";
+			response += "\r\n";
+			response += errorBody;
+			write(m_new_socket, response.c_str(), response.size());
+			return;
+		}
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		htmlBody = buffer.str();
+		file.close();
+	}
+	else {
+		std::ifstream file("home_page.html"); // Open the home_page.html file
+		if (!file.is_open())
+		{
+			std::cerr << "Error: Could not open home_page.html" << std::endl;
+			std::string errorBody = "<!DOCTYPE html><html lang=\"en\"><body><h1>500 Internal Server Error</h1><p>Could not load the requested file.</p></body></html>";
+			std::string response = "HTTP/1.1 500 Internal Server Error\r\n";
+			response += "Content-Type: text/html\r\n";
+			response += "Content-Length: " + std::to_string(errorBody.size()) + "\r\n";
+			response += "Connection: close\r\n";
+			response += "\r\n";
+			response += errorBody;
+			write(m_new_socket, response.c_str(), response.size());
+			return;
+		}
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		htmlBody = buffer.str();
+		file.close();
+	}
+	std::string response = "HTTP/1.1 200 OK\r\n";
+	if (i > 1) {
+		response += "Content-Type: image/jpeg\r\n";
+	}
+	else {
+		response += "Content-Type: text/html\r\n";
+	}
+	response += "Content-Length: " + std::to_string(htmlBody.size()) + "\r\n";
+	response += "Connection: close\r\n";
+	response += "\r\n";
+	response += htmlBody;
+	// Read the file contents into a string
 
-	unsigned long bytesSent;
+	// Construct the HTTP response
 
-	bytesSent = write(m_new_socket, response.c_str(), response.size());
+	// Send the response
+	unsigned long bytesSent = write(m_new_socket, response.c_str(), response.size());
 
 	if (bytesSent == response.size())
 	{
-		std::cout << "------ Server Response sent to client ------\n\n" << std::endl;
+		std::cout << "------ home_page.html served as landing page ------\n\n" << std::endl;
 	}
 	else
 	{
-		std::cout << "Error sending response to client" << std::endl;
+		std::cerr << "Error sending response to client" << std::endl;
 	}
 }
+
+
 
 // void TcpServer::closeserver()
 // {

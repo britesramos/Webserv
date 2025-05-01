@@ -76,35 +76,16 @@ int Client::parse_header(std::string request){
 	}
 	return 0;
 }
-//TODO: fix this for the body. Or rearrange the parse_header to include the body as well.
+
 int Client::parse_body(std::string request){
 	//Find the start position of the body:
-	int body_start = getpos(request, "\r\n", 0) + 2;
+	int body_start = getpos(request, "\r\n\r\n", 0) + 4;
 	if (body_start == -1)
 	return -1;
-	//Find the end position of the body:
-	int body_end = getpos(request, "\r\n\r\n", 0);
-	if (body_end == -1)
-		return -1;
-	//Get the body:
-	std::string body = request.substr(body_start, body_end - body_start);
-	// printf("body: %s\n", body.c_str());
-	//Split the body into lines + Loop through splited head and assign key (before ":") and value (after ":") to the map
-	size_t pos = 0;
-	pos = body.find("\r\n");
-	while (pos != std::string::npos){
-		std::string line = body.substr(0, pos);
-		size_t delimiter_pos = line.find(":") + 1;
-		if (delimiter_pos == std::string::npos){
-			std::cout << "Error parsing body line: " << line << std::endl;
-			return -1;
-		}
-		std::string key = line.substr(0, delimiter_pos);
-		std::string value = line.substr(delimiter_pos + 1);
-		this->_Client_RequestMap.insert({key, value});
-		body.erase(0, pos + 2);
-		pos = body.find("\r\n");
-	}
+	//Get the body (everything after the header):
+	std::string body = request.substr(body_start);
+	this->_Client_RequestMap["body"] = body;
+	// printf("body: %s\n", body.c_str()); //temp
 	return 0;
 }
 
@@ -119,15 +100,16 @@ int Client::parseClientRequest(std::string request){
 		std::cerr << "Error parsing header of request" << std::endl;
 		return -1;
 	}
-	if (parse_body(request) < 0)
+	if (request.find("POST") != std::string::npos)
 	{
-		std::cerr << "Error parsing body of request" << std::endl;
-		return -1;
+		if (parse_body(request) < 0)
+		{
+			std::cerr << "Error parsing body of request" << std::endl;
+			return -1;
+		}
 	}
 	return 0;
 }
-
-
 
 
 //***Getters***//
