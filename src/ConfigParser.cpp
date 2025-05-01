@@ -202,7 +202,7 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 			if (is_value_empty(key, value))
 				return false;
 			std::vector<std::string> temp = split_by_whitespace(value);
-			if (!is_digit_valid(temp[0]) || temp[0].empty() ||  temp[1].empty() || temp.size() != 2)
+			if (temp.size() != 2 || !is_digit_valid(temp[0]) || temp[0].empty() || temp[1].empty())
 			{
 				std::cerr << "Invalid values from Return in  - LOCATION - block" << std::endl;
 				return false;

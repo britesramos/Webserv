@@ -42,46 +42,35 @@ int main(int argc, char **argv)
 		std::cout << "=== Server " << i << " ===\n";
 		servers[i].print();
 	}
-	// const std::vector<std::string>& lines = file.getLines();
-    // for (size_t i = 0; i < lines.size(); ++i) {
-    //     std::cout << "Line " << i << ": " << lines[i] << std::endl;
-    // }
-
-	// std::vector<std::string> allTokens;
-
-	// for (const std::string& line : file.getLines()) {
-	// 	std::vector<std::string> lineTokens = file.tokenize_line(line);
-	// 	allTokens.insert(allTokens.end(), lineTokens.begin(), lineTokens.end()); // add to full token list
-	// }
-
-	// for (size_t i = 0; i < allTokens.size(); ++i) {
-    //     std::cout << "Tokens " << i << ": " << allTokens[i] << "#!"<< std::endl;
-    // }
-	// ServerConfig config;
-
-	// config.setHost("127.0.0.1");
-    // config.setPort("8080");
-    // config.setServerName("example.com");
-    // config.setMaxClientSize(5000000);
-    // config.setErrorPage(404, "/error_pages/404.html");
-    // config.setErrorPage(500, "/error_pages/500.html");
-	// std::cout << "host: " << file.getHost() << std::endl;
-	// std::cout << "port: " << config.getPort() << std::endl;
-	// std::cout << "server name: " << config.getServerName() << std::endl;
-	// std::cout << "max client size: " << config.getMaxClientSize() << std::endl;
-	// std::cout << "error page 4-4: " << config.getErrorPage(404) << std::endl;
-	// std::cout << "error page 500: " << config.getErrorPage(500) << std::endl;
-
-	// const std::vector<ConfigParser>& temp = file.getServer();
-	// for (size_t i = 0; i < temp.size(); ++i) {
-	// 	std::cout << "Server block " << i << ":\n";
-	// 	for (const auto& pair : temp[i]) {
-	// 		std::cout << "  " << pair.first << " = " << pair.second << std::endl;
-	// 	}
-	// 	std::cout << std::endl;
-	// file.getServer();
-	// if (config.getErrorPage(100) == "") // doesnt have this number page on the map
-	// 	std::cout << "empty bitch" << std::endl;
-	TcpServer server = TcpServer("localhost", "8080"); //This values need to be replaced by configuration file parsed data.
+	TcpServer server = TcpServer(servers[0]);
 	server.startListen();
+	TcpServer server1 = TcpServer(servers[1]);
+	server1.startListen();
 }
+
+// const std::vector<ServerConfig>& servers = file.getServer();
+
+// for (size_t i = 0; i < servers.size(); ++i) {
+	
+// 	std::cout << "=== Server " << i << " ===\n";
+// 	servers[i].print();
+// 	tcp_servers[i] = TcpServer(servers[i]);
+// }
+
+// std::cout << "=== Listen 0 ===\n";
+// servers[0].print();
+// tcp_servers[0].startListen();
+
+// for (size_t i = 0; i < servers.size(); ++i) {
+	
+// 	std::cout << "=== Server " << i << " ===\n";
+// 	// servers[i].print();
+// 	tcp_servers.push_back(TcpServer(servers[i]));
+// }
+
+// for (size_t i = 0; i < servers.size(); ++i) {
+	
+// 	std::cout << "=== Listen " << i << " ===\n";
+// 	servers[i].print();
+// 	tcp_servers[i].startListen();
+// }
