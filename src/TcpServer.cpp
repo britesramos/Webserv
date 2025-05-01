@@ -21,8 +21,8 @@ static struct sockaddr_in init_socket_address(std::string ip_address, std::strin
 		exit (1);
 	} else {
 		std::memcpy(&socket_address, result->ai_addr, sizeof(struct sockaddr_in));
-		std::cout << "this is the value inside sockaddress: " << socket_address.sin_addr.s_addr << std::endl;
-		std::cout << "this is the value inside sockaddress port: " << socket_address.sin_port << std::endl;
+		// std::cout << "this is the value inside sockaddress: " << socket_address.sin_addr.s_addr << std::endl;
+		// std::cout << "this is the value inside sockaddress port: " << socket_address.sin_port << std::endl;
 		freeaddrinfo(result);
 	}
 	return socket_address;
