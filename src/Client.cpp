@@ -100,6 +100,7 @@ int Client::parseClientRequest(std::string request){
 		std::cerr << "Error parsing header of request" << std::endl;
 		return -1;
 	}
+	//check chucked transfer encoding
 	if (request.find("POST") != std::string::npos)
 	{
 		if (parse_body(request) < 0)

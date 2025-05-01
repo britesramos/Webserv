@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	TcpServer server1 = TcpServer(servers[1]);
 	server1.startListen();
 }
-
+//TODO: Multiple servers???
 // const std::vector<ServerConfig>& servers = file.getServer();
 
 // for (size_t i = 0; i < servers.size(); ++i) {
