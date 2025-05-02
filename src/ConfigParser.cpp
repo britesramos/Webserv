@@ -59,7 +59,9 @@ const std::vector<ServerConfig>& ConfigParser::getServer() const
 	return (this->servers);
 }
 
-bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
+// bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
+
+bool ConfigParser::config_file_parsing(char *argv)
 {
 	ServerConfig current_server;
 	Location current_location;
@@ -68,6 +70,14 @@ bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)
 	bool in_server_block = false;
 	bool in_location_block = false;
 
+	if (is_file_extension_correct(argv) == false)
+		return (1);
+	else
+	{
+		if (is_possible_use_file(argv) == false)
+			return (1);
+	}
+	const std::vector<std::string>& lines = getLines();
 	for (size_t i = 0; i < lines.size(); ++i) {
 		std::string str = lines[i];
 

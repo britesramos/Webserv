@@ -1,6 +1,7 @@
 #include "../include/TcpServer.hpp"
 #include "../include/ServerConfig.hpp"
 #include "../include/ConfigParser.hpp"
+#include "../include/Server.hpp"
 
 void interrupt_helper(int sig)
 {
@@ -12,65 +13,54 @@ void interrupt_helper(int sig)
 
 int main(int argc, char **argv)
 {
-	ConfigParser file;
-	// function to handle Signal
+	//---------------------------------------------------------------------------------//
+	// function to handle Signal - Ctrl - CAN WE CLEAN THIS UP? MAKE SIGNALS THEIR OWN THING?
 	struct sigaction signalInterrupter;
 	signalInterrupter.sa_handler = interrupt_helper;
 	sigemptyset(&signalInterrupter.sa_mask);
 	signalInterrupter.sa_flags = 0;
 	sigaction(SIGINT, &signalInterrupter, 0);
-	if (argc != 2)
+	//---------------------------------------------------------------------------------//
+	if (argc == 2)
+	{
+		ConfigParser file;
+		if (file.config_file_parsing(argv[1]) == false) //(This comment should be deleted) - Moved everything related to the config file to the configParser.cpp and changed the main function name to config_file_parsing.
+			return (1);
+		const std::vector<ServerConfig>& servers = file.getServer();
+		//-----------------------------------TO BE DELETED---------------------------------//
+		// for (size_t i = 0; i < servers.size(); ++i) {
+		// 	std::cout << "=== Server " << i << " ===\n";
+		// 	servers[i].print();
+		// }
+		//---------------------------------------------------------------------------------//
+
+		//1)Start the server
+		Server server;
+		server.setServer(servers);
+		if (server.startserver() == 1)
+		{
+			std::cerr << "Failed to start server" << std::endl;
+			return (1);
+		}
+		if (server.startlisten() == 1)
+		{
+			std::cerr << "Failed to start listening" << std::endl;
+			return (1);
+		}
+
+		//TO DO:
+		//2)Start epoll loop 
+
+
+
+		//This still works (to be deleted once server class is working)
+		// TcpServer server = TcpServer(servers[0]);
+		// server.startListen();
+	}
+	else
 	{
 		std::cerr << "--- Incorrect amout of arguments ---" << std::endl;
 		std::cerr << "   PROVIDE: ./webserv <file>.config" << std::endl;
 		return (1);
 	}
-	if (file.is_file_extension_correct(argv[1]) == false)
-		return (1);
-	else
-	{
-		if (file.is_possible_use_file(argv[1]) == false)
-			return (1);
-	}
-	if (file.is_server_config_load(file.getLines()) == false)
-		return (1);
-
-
-	const std::vector<ServerConfig>& servers = file.getServer();
-
-	for (size_t i = 0; i < servers.size(); ++i) {
-		std::cout << "=== Server " << i << " ===\n";
-		servers[i].print();
-	}
-	TcpServer server = TcpServer(servers[0]);
-	server.startListen();
-	TcpServer server1 = TcpServer(servers[1]);
-	server1.startListen();
 }
-//TODO: Multiple servers???
-// const std::vector<ServerConfig>& servers = file.getServer();
-
-// for (size_t i = 0; i < servers.size(); ++i) {
-	
-// 	std::cout << "=== Server " << i << " ===\n";
-// 	servers[i].print();
-// 	tcp_servers[i] = TcpServer(servers[i]);
-// }
-
-// std::cout << "=== Listen 0 ===\n";
-// servers[0].print();
-// tcp_servers[0].startListen();
-
-// for (size_t i = 0; i < servers.size(); ++i) {
-	
-// 	std::cout << "=== Server " << i << " ===\n";
-// 	// servers[i].print();
-// 	tcp_servers.push_back(TcpServer(servers[i]));
-// }
-
-// for (size_t i = 0; i < servers.size(); ++i) {
-	
-// 	std::cout << "=== Listen " << i << " ===\n";
-// 	servers[i].print();
-// 	tcp_servers[i].startListen();
-// }

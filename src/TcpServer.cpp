@@ -1,9 +1,6 @@
 #include "../include/TcpServer.hpp"
 #include "../include/Client.hpp"
 
-// TODO Create a function to print cerr
-
-
 static struct sockaddr_in init_socket_address(std::string ip_address, std::string port)
 {
 	struct sockaddr_in socket_address = {};
