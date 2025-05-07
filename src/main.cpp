@@ -1,7 +1,7 @@
+#include "../include/Server.hpp"
 #include "../include/TcpServer.hpp"
 #include "../include/ServerConfig.hpp"
 #include "../include/ConfigParser.hpp"
-#include "../include/Server.hpp"
 
 void interrupt_helper(int sig)
 {
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	if (argc == 2)
 	{
 		ConfigParser file;
-		if (file.config_file_parsing(argv[1]) == false) //(This comment should be deleted) - Moved everything related to the config file to the configParser.cpp and changed the main function name to config_file_parsing.
+		if (file.config_file_parsing(argv[1]) == false)
 			return (1);
 		const std::vector<ServerConfig>& servers = file.getServer();
 		//-----------------------------------TO BE DELETED---------------------------------//
@@ -47,11 +47,6 @@ int main(int argc, char **argv)
 			std::cerr << "Failed to start listening" << std::endl;
 			return (1);
 		}
-
-		//TO DO:
-		//2)Start epoll loop 
-
-
 
 		//This still works (to be deleted once server class is working)
 		// TcpServer server = TcpServer(servers[0]);

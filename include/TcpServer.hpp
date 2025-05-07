@@ -15,7 +15,6 @@
 #include "ServerConfig.hpp"
 #include <sstream>
 
-#define BUFFER_SIZE 4096 //This could be an issue
 
 class TcpServer{
 	private:
