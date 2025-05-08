@@ -26,7 +26,6 @@ int main(int argc, char **argv)
 		ConfigParser file;
 		if (file.config_file_parsing(argv[1]) == false)
 			return (1);
-		const std::vector<ServerConfig>& servers = file.getServer();
 		//-----------------------------------TO BE DELETED---------------------------------//
 		// for (size_t i = 0; i < servers.size(); ++i) {
 		// 	std::cout << "=== Server " << i << " ===\n";
@@ -34,19 +33,30 @@ int main(int argc, char **argv)
 		// }
 		//---------------------------------------------------------------------------------//
 
-		//1)Start the server
-		Server server;
-		server.setServer(servers);
-		if (server.startserver() == 1)
+		//1)Start the server(s):
+		Epoll epoll;
+		if (epoll.init_epoll() == 1)
 		{
-			std::cerr << "Failed to start server" << std::endl;
+			std::cerr << "Failed to initialize epoll" << std::endl;
 			return (1);
 		}
-		if (server.startlisten() == 1)
+		const std::vector<ServerConfig>& servers = file.getServer();
+		//Create vector of server objects: (depends on number of servers in config file)
+		int number_of_servers = file.getNumberOfServers();
+		std::vector<Server> webservers(number_of_servers);
+		//TODO: The following loop should start each server with the correct config data from parsing.
+		//I need to iterate over both vectors.
+		for (const auto& server : servers)
 		{
-			std::cerr << "Failed to start listening" << std::endl;
-			return (1);
+			Server webservers(server);
+			if (webservers.startserver() == 1)
+			{
+				std::cerr << "Failed to start server." << std::endl;
+				return (1);
+			}
+			epoll.addServerSocket(webservers.getServerSocket());
 		}
+		// epoll.start_accepting_connections();
 
 		//This still works (to be deleted once server class is working)
 		// TcpServer server = TcpServer(servers[0]);

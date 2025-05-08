@@ -1,25 +1,19 @@
 #include "../include/Server.hpp"
 
-Server::Server(){
+Server::Server(ServerConfig config_data) : _config_data(config_data){
 	this->_Server_socket = 0;
-	this->_epoll = new Epoll();
 	this->_len_Server_address = sizeof(_Server_address);
 	// std::memset(&_Server_address, 0, sizeof(_Server_address));
 	this->_Server_address.sin_family = AF_INET;
-	this->_Server_address.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY
-	this->_Server_address.sin_port = htons(8080); // Port number
+	this->_Server_address.sin_addr.s_addr = INADDR_ANY; //Not sure about this - what it means.
+	this->_Server_address.sin_port = htons(static_cast<uint16_t>(std::stoi(config_data.getPort()))); // Port number
 }
 
 Server::~Server(){
 }
 
-void Server::setServer(std::vector<ServerConfig> servers)
-{
-	this->_servers = servers;
-}
-
 int Server::startserver(){
-	this->_Server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	this->_Server_socket = socket(this->_Server_address.sin_family, SOCK_STREAM, 0);
 	if (this->_Server_socket == -1)
 	{
 		std::cerr << RED << "Error creating socket" << std::endl;
@@ -31,15 +25,11 @@ int Server::startserver(){
 		close (_Server_socket);
 		return 1;
 	}
-	return 0;
-}
-
-int Server::startlisten(){
 	if (listen(_Server_socket, 128) < 0) //Linux default is 128
 	{
 		std::cout << RED << "Socket listen failed" << std::endl;
 		close(_Server_socket);
-		exit (1);
+		return 1;
 	}
 	uint32_t ip_host_order = ntohl(_Server_address.sin_addr.s_addr);
 	
@@ -51,33 +41,6 @@ int Server::startlisten(){
 	
 	<< " PORT: " << ntohs(this->_Server_address.sin_port) 
 	<< " ***\n\n" << std::endl;
-
-	//ACCEPT CONNECTION //EPOLL LOOP
-	if (init_epoll() == 1)
-	{
-		std::cerr << RED << "Error initializing epoll" << std::endl;
-		close(_Server_socket);
-		return 1;
-	}
-	if (start_accepting_connections() < 0)
-	{
-		std::cerr << RED << "Error accepting connections" << std::endl;
-		close(_Server_socket);
-		return 1;
-	}
-	return 0;
-}
-
-int Server::init_epoll(){
-	this->_epoll->set_epoll_fd(epoll_create1(0));
-	if (this->_epoll->get_epoll_fd() == -1)
-		return 1;
-	//Adding server socket to the list of intereste of epoll
-	epoll_event event = this->_epoll->get_event();
-	if (epoll_ctl(this->_epoll->get_epoll_fd(), EPOLL_CTL_ADD, this->_Server_socket, &event) == -1){
-		std::cerr << RED << "Error adding server socket to epoll" << std::endl;
-		return 1;
-	}
 	return 0;
 }
 
@@ -159,4 +122,8 @@ int Server::addClient(int new_connection_socket_fd){
 		return 1;
 	}
 	return 0;
+}
+
+int::Server::getServerSocket() const{
+	return this->_Server_socket;
 }

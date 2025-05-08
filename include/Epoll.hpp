@@ -18,7 +18,8 @@ class Epoll{
 		Epoll();
 		~Epoll();
 
-
+		int init_epoll();
+		int addServerSocket(int server_socket_fd);
 		int addEpollFd(int new_connection_socket_fd);
 
 		// Setters and Getters

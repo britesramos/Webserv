@@ -7,15 +7,18 @@
 
 class ServerConfig{
 	private:
+		int _Server_socket; //Are you using this? I will delete it if not
 		std::string host;
 		std::string port;
 		std::string server_name;
 		int max_client_size;
 		std::vector<Location> location_blocks;
 		std::map<int, std::string> error_pages;
+
 	public:
 		ServerConfig();
 		~ServerConfig();
+
 	// Setters
 		void setHost(std::string input);
 		void setPort(std::string input);
@@ -24,7 +27,7 @@ class ServerConfig{
 		void setErrorPage(int error_number, std::string page);
 		void addLocation(const Location& location);
 
-		// Getters
+	// Getters
 		std::string getHost() const;
 		std::string getPort() const;
 		std::string getServerName() const;

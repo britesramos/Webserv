@@ -13,21 +13,21 @@
 class Server{
 	private:
 		int _Server_socket;
-		Epoll *_epoll;
+		// Epoll *_epoll; //take out
 		struct sockaddr_in _Server_address;
 		unsigned int _len_Server_address;
-		std::vector<ServerConfig> _servers;
+		ServerConfig _config_data;
 		std::unordered_map<int, Client> _clients;
 
 	public:
-		Server();
+		Server(ServerConfig config_data);
 		~Server();
 		int startserver();
-		int startlisten();
 		int init_epoll();
 		int start_accepting_connections();
 		int addClient(int new_connection_socket_fd);
 
-		void setServer(std::vector<ServerConfig> servers);
+		//Getters
+		int getServerSocket() const;
 		
 };
