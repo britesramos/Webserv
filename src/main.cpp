@@ -2,11 +2,14 @@
 #include "../include/ServerConfig.hpp"
 #include "../include/ConfigParser.hpp"
 
+TcpServer server;
+
 void interrupt_helper(int sig)
 {
 	std::cout << "\n";
 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
-	// TODO close fds function with clean stuff
+	// TODO: close fds function with clean stuff, clean maps as well
+	server.closeserver();
 	exit(sig + 128);
 }
 
@@ -42,10 +45,10 @@ int main(int argc, char **argv)
 		std::cout << "=== Server " << i << " ===\n";
 		servers[i].print();
 	}
-	TcpServer server = TcpServer(servers[0]);
+	server = TcpServer(servers[0]);
 	server.startListen();
-	TcpServer server1 = TcpServer(servers[1]);
-	server1.startListen();
+	// TcpServer server1 = TcpServer(servers[1]);
+	// server1.startListen();
 }
 
 // const std::vector<ServerConfig>& servers = file.getServer();

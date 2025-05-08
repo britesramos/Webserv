@@ -3,6 +3,10 @@
 
 // TODO Create a function to print cerr
 
+TcpServer::TcpServer()
+{
+
+}
 
 static struct sockaddr_in init_socket_address(std::string ip_address, std::string port)
 {
@@ -41,14 +45,14 @@ TcpServer::TcpServer(ServerConfig config) : m_socket(), m_new_socket(), m_socket
 	}
 }
 
-TcpServer::~TcpServer()
-{
-	std::cout << "this is the fd closed "<< m_socket << std::endl;
-	close(m_socket);
-	close(m_new_socket);
-	exit(0);
-	// closeserver(); // is it necessary to create a close function?
-}
+// TcpServer::~TcpServer()
+// {
+// 	// std::cout << "this is the fd closed "<< m_socket << std::endl;
+// 	// close(m_socket);
+// 	// close(m_new_socket);
+// 	// exit(0);
+// 	closeserver(); // is it necessary to create a close function?
+// }
 
 TcpServer::TcpServer(const TcpServer &copy)
 {
@@ -129,7 +133,10 @@ void TcpServer::startListen()
 		if (client.parseClientRequest(request) < 0)
 			std::cout << "Error parsing client request" << std::endl;
 		
-		sendResponse();
+		if (is_cgi_response(client.get_Request("url_path")))
+			std::cout << "				this: " << client.get_Request("url_path") << std::endl;
+		else
+			sendResponse();
 		std::cout << "------ Client Request parsed ------\n\n" << std::endl;
 		//Request map(printing):
 		for (auto it = client.get_RequestMap().begin(); it != client.get_RequestMap().end(); ++it){
@@ -222,11 +229,20 @@ void TcpServer::sendResponse()
 }
 
 
+bool TcpServer::is_cgi_response(std::string response)
+{
+	if (response.find("/cgi-bin") != std::string::npos)
+		return true;
+	return false;
+}
 
-// void TcpServer::closeserver()
-// {
-// 	std::cout << "this is the fd closed "<< m_socket << std::endl;
-// 	close(m_socket);
-// 	close(m_new_socket);
-// 	exit(0);
-// }
+void TcpServer::closeserver()
+{
+	std::cout << ">>> closeserver() CALLED <<<" << std::endl;
+	std::cout << "this is the fd closed "<< m_socket << std::endl;
+	if (m_socket >= 0)
+		close(m_socket);
+	if (m_new_socket >= 0)
+		close(m_new_socket);
+	// exit(0);
+}

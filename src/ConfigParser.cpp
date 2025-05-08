@@ -1,5 +1,16 @@
 #include "../include/ConfigParser.hpp"
 
+ConfigParser::ConfigParser()
+{
+	this->number_of_server = 0;
+}
+
+ConfigParser::~ConfigParser() // this is still being called ?
+{
+	this->servers.clear();
+	this->lines.clear();
+}
+
 bool ConfigParser::is_file_extension_correct(std::string input)
 {
 	if (input.substr(input.find_last_of(".") + 1) == "conf")
@@ -51,12 +62,23 @@ const std::vector<std::string>& ConfigParser::getLines() const
 
 void ConfigParser::addServer(ServerConfig &server)
 {
+	this->number_of_server++;
 	servers.push_back(server);
 }
 
 const std::vector<ServerConfig>& ConfigParser::getServer() const
 {
 	return (this->servers);
+}
+
+int ConfigParser::get_number_of_server() const
+{
+	return (this->number_of_server);
+}
+
+void ConfigParser::set_number_of_server(int number)
+{
+	this->number_of_server = number;
 }
 
 bool ConfigParser::is_server_config_load(const std::vector<std::string>& lines)

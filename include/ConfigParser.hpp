@@ -11,11 +11,14 @@ class ConfigParser {
 	private:
 		std::vector<std::string> lines;
 		std::vector<ServerConfig> servers;
+		int number_of_server;
 	public:
-		// ConfigParser();
-		// ~ConfigParser();
+		ConfigParser();
+		~ConfigParser();
 		void addServer(ServerConfig &server);
 		const std::vector<ServerConfig>& getServer() const;
+		int get_number_of_server() const;
+		void set_number_of_server(int number);
 
 		bool is_file_extension_correct(std::string input);
 		bool is_possible_use_file(std::string input);
@@ -33,7 +36,6 @@ class ConfigParser {
 		bool is_value_empty(std::string key, std::string value);
 		bool is_semicolon_present(std::string& value);
 		std::vector<std::string> split_by_whitespace(const std::string& str);
-
 
 };
 

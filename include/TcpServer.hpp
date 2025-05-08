@@ -26,16 +26,20 @@ class TcpServer{
 
 		int startserver();
 		void acceptConnection(int &new_socket);
-		// void closeserver();
 		void sendResponse();
 		public:
+		TcpServer();
 		TcpServer(ServerConfig config); // will received from the config file
-		~TcpServer();
-
+		// ~TcpServer();
+		
 		TcpServer(const TcpServer &copy);
 		TcpServer& operator=(const TcpServer &copy);
-
+		
 		void startListen();
+		
+		
+		bool is_cgi_response(std::string response);
+		void closeserver();
 };
 
 #endif
