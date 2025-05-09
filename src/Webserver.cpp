@@ -108,9 +108,9 @@ int Webserver::main_loop(){
 int Webserver::is_server_fd(int fd){
 	for (size_t i = 0; i < this->_servers.size(); ++i){
 		if (this->_servers[i].getServerSocket() == fd)
-			return 1;
+			return 0;
 	}
-	return 0;
+	return 1;
 }
 
 int Webserver::process_request(int client_fd){
