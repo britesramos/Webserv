@@ -56,7 +56,11 @@ int main(int argc, char **argv)
 		}
 
 		//3)Start accepting connections:
-	
+		if (webserver.main_loop() == 1)
+		{
+			//CLOSE FDS;
+			return (1);
+		}
 
 		//This still works (to be deleted once webserver class is working)
 		// TcpServer server = TcpServer(servers[0]);
