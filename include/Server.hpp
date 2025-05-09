@@ -23,10 +23,11 @@ class Server{
 
 		int startserver();
 		int init_epoll();
-		int start_accepting_connections();
 		int addClient(int new_connection_socket_fd);
+		int removeClient(int client_fd);
 
 		//Getters
 		int getServerSocket() const;
+		Client& getclient(int client_fd);
 		
 };

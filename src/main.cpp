@@ -28,12 +28,6 @@ int main(int argc, char **argv)
 		ConfigParser file;
 		if (file.config_file_parsing(argv[1]) == false)
 			return (1);
-		//-----------------------------------TO BE DELETED---------------------------------//
-		// for (size_t i = 0; i < servers.size(); ++i) {
-		// 	std::cout << "=== Server " << i << " ===\n";
-		// 	servers[i].print();
-		// }
-		//---------------------------------------------------------------------------------//
 
 		//1)Start/init the server(s) + epoll_instance:
 		Webserver webserver;
@@ -58,7 +52,11 @@ int main(int argc, char **argv)
 		//3)Start accepting connections:
 		if (webserver.main_loop() == 1)
 		{
-			//CLOSE FDS;
+			//Clean up and close fds:
+			//Servers fds
+			//Clients fds
+			//Epoll fds
+			//Don't these are closed once the ovbjects are destroyed?
 			return (1);
 		}
 

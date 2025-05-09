@@ -84,49 +84,59 @@ int Webserver::main_loop(){
 		//PROCESSING EVENTS:
 		for (int i = 0; i < epoll_num_ready_events; ++i)
 		{
-			for (size_t j = 0; j < this->_servers.size(); ++j)
-			{
 				//If the socket fd is the server socket fd there is a new connection:
-				if (events[i].data.fd == this->_servers[j].getServerSocket()){
-					if (start_accepting_connections(this->_servers[j]) == 1)
+				if (is_server_fd(events[i].data.fd)){
+					if (start_accepting_connections(this->_servers[i]) == 1)
 						return 1;
 				}
-			}
-
-			// //If the socket fd is a client socket fd, there is a request to read and a response to send:
-			// else if (events[i].events & EPOLLIN){
-			// 	std::cout << "====== Processing Client: " << events[i].data.fd << " ======" << std::endl;
-			// 	std::cout << "====== Processing Client Request ======" << std::endl;
-			// 	int bytes_received = 0;
-			// 	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
-			// 	bytes_received = recv(events[i].data.fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
-			// 	if (bytes_received < 0)
-			// 	{
-			// 		std::cout << RED << "Error receiving data from client" << std::endl;
-			// 		close(events[i].data.fd);
-			// 		//Remove client from epoll:
-			// 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-			// 		//Remove client from clients map:
-			// 		_clients.erase(events[i].data.fd);
-			// 		std::cout << "Client disconnected: " << events[i].data.fd << std::endl;
-			// 		continue;
-			// 	}
-			// 	std::string request;
-			// 	request += buffer;
-			// 	std::cout << request << std::endl; //temporary, should be removed
-			// 	// _clients[events[i].data.fd].parseClientRequest(request);
-			// 	//Send response:
-			// 	//Clean up:
-			// 		//Close connection:
-			// 		//Remove client from epoll:
-			// 		//Remove client from clients map:
-			// }
+				//If the socket fd is a client socket fd, there is a request to read and a response to send:
+				else if (!is_server_fd(events[i].data.fd)){
+					std::cout << "====== Processing Client: " << events[i].data.fd << " ======" << std::endl;
+					if (process_request(events[i].data.fd) == 1)
+						return 1;
+					// send_response(events[i].data.fd);
+					// 	//Clean up:
+					// 		//Close connection:
+					// 		//Remove client from epoll:
+					// 		//Remove client from clients map:
+				}
 		}
 	}
 	return 0;
 }
 
-int Webserver::start_accepting_connections(Server server){
+int Webserver::is_server_fd(int fd){
+	for (size_t i = 0; i < this->_servers.size(); ++i){
+		if (this->_servers[i].getServerSocket() == fd)
+			return 1;
+	}
+	return 0;
+}
+
+int Webserver::process_request(int client_fd){
+	int bytes_received = 0;
+	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
+	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
+	std::cout << "Bytes received: " << bytes_received << std::endl;
+	if (bytes_received < 0)
+	{
+		std::cout << RED << "Error receiving data from client" << std::endl;
+		//Remove client from epoll:
+		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+		//Remove client from clients map:
+		// _servers.removeClient(client_fd);
+		std::cout << "Client disconnected: " << client_fd << std::endl;
+		return 1;
+	}
+	std::string request;
+	request += buffer;
+	std::cout << request << std::endl; //temporary, should be removed
+	// _servers.getclient(client_fd).parseClientRequest(request);
+	// _clients[events[i].data.fd].parseClientRequest(request);
+	return 0;
+}
+
+int Webserver::start_accepting_connections(Server& server){
 	int new_connection_socket_fd;
 	struct sockaddr_in new_connection_address;
 	socklen_t new_connection_address_len = sizeof(new_connection_address);

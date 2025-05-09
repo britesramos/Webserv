@@ -60,6 +60,25 @@ int Server::addClient(int new_connection_socket_fd){
 	return 0;
 }
 
+int Server::removeClient(int client_fd){
+	auto it = _clients.find(client_fd);
+	if (it != _clients.end()) {
+		_clients.erase(it);
+		std::cout << GREEN << "Client removed from clients map: " << client_fd << std::endl;
+		return 0;
+	}
+	std::cerr << RED << "Error removing client from clients map" << std::endl;
+	return 1;
+}
+
+//Getters
+Client& Server::getclient(int client_fd){
+	auto it = _clients.find(client_fd);
+	if (it != _clients.end()) {
+		return it->second;
+	}
+	throw std::runtime_error("Client not found");
+}
 int::Server::getServerSocket() const{
 	return this->_Server_socket;
 }

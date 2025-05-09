@@ -22,7 +22,10 @@ class Webserver{
 		//Server methods
 		int init_servers(const std::vector<ServerConfig>& config_data_servers);
 		int main_loop();
-		int start_accepting_connections(Server server);
+		int start_accepting_connections(Server& server);
+		int is_server_fd(int fd);
+		int process_request(int client_fd);
+		// int send_response(int client_fd);
 
 		//Debug methods
 		void printServerFDs() const;
