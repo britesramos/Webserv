@@ -5,6 +5,11 @@
 
 #pragma once
 
+#define RESET   "\033[0m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+
 //Example of a GET request:
 // GET /index.html HTTP/1.1
 // Host: localhost:8080

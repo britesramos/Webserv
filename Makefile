@@ -15,10 +15,11 @@ SRC_DIR = src
 SOURCE = main.cpp \
 		ConfigParser.cpp \
 		ConfigParser_utils.cpp \
-		TcpServer.cpp \
 		ServerConfig.cpp \
 		Location.cpp \
 		Client.cpp \
+		Server.cpp \
+		Webserver.cpp \
 		Cgi.cpp \
 
 

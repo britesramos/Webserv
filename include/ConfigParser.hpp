@@ -24,7 +24,7 @@ class ConfigParser {
 		bool is_possible_use_file(std::string input);
 		const std::vector<std::string>& getLines() const;
 
-		bool is_server_config_load(const std::vector<std::string>& lines);
+		bool config_file_parsing(char *argv);
 		bool is_values_and_keys_set(std::string str, ServerConfig& current_server);
 		bool is_static_content_load(std::string str, Location& current_location);
 

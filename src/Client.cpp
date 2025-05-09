@@ -1,7 +1,7 @@
 #include "../include/Client.hpp"
 
 Client::Client(int socket_fd):_Client_socket(socket_fd){
-	std::cout << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
+	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
 
 Client::~Client(){
@@ -14,7 +14,7 @@ int Client::getpos(std::string str, std::string delimiter, int start){
 	size_t pos = str.find(delimiter, start);
 	if (pos == std::string::npos)
 	{
-		std::cerr << "Error on getpos function." << std::endl;
+		std::cerr << RED << "Error on getpos function." << std::endl;
 		return -1;
 	}
 	return pos;
@@ -65,7 +65,7 @@ int Client::parse_header(std::string request){
 		std::string line = header.substr(0, pos);
 		size_t delimiter_pos = line.find(":") + 1;
 		if (delimiter_pos == std::string::npos){
-			std::cout << "Error parsing header line: " << line << std::endl;
+			std::cout << RED << "Error parsing header line: " << line << std::endl;
 			return -1;
 		}
 		std::string key = line.substr(0, delimiter_pos);
@@ -92,19 +92,20 @@ int Client::parse_body(std::string request){
 int Client::parseClientRequest(std::string request){
 	if (parse_firstline(request) < 0)
 	{
-		std::cerr << "Error parsing first line of request" << std::endl;
+		std::cerr << RED << "Error parsing first line of request" << std::endl;
 		return -1;
 	}
 	if (parse_header(request) < 0)
 	{
-		std::cerr << "Error parsing header of request" << std::endl;
+		std::cerr << RED << "Error parsing header of request" << std::endl;
 		return -1;
 	}
+	//check chucked transfer encoding
 	if (request.find("POST") != std::string::npos)
 	{
 		if (parse_body(request) < 0)
 		{
-			std::cerr << "Error parsing body of request" << std::endl;
+			std::cerr << RED << "Error parsing body of request" << std::endl;
 			return -1;
 		}
 	}
