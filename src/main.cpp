@@ -9,7 +9,7 @@ void interrupt_helper(int sig)
 	std::cout << "\n";
 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
 	// TODO: close fds function with clean stuff, clean maps as well
-	server.closeserver();
+	// server.closeserver();
 	exit(sig + 128);
 }
 

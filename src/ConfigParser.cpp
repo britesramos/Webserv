@@ -81,17 +81,6 @@ void ConfigParser::set_number_of_server(int number)
 	this->number_of_server = number;
 }
 
-int ConfigParser::get_number_of_server() const
-{
-	return (this->number_of_server);
-}
-
-void ConfigParser::set_number_of_server(int number)
-{
-	this->number_of_server = number;
-}
-
-
 bool ConfigParser::config_file_parsing(char *argv)
 {
 	ServerConfig current_server;
