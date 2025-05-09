@@ -19,7 +19,7 @@ SOURCE = main.cpp \
 		Location.cpp \
 		Client.cpp \
 		Server.cpp \
-		Epoll.cpp \
+		Webserver.cpp \
 
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))

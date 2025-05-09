@@ -2,6 +2,7 @@
 #include "../include/TcpServer.hpp"
 #include "../include/ServerConfig.hpp"
 #include "../include/ConfigParser.hpp"
+#include "../include/Webserver.hpp"
 
 void interrupt_helper(int sig)
 {
@@ -33,32 +34,30 @@ int main(int argc, char **argv)
 		// }
 		//---------------------------------------------------------------------------------//
 
-		//1)Start the server(s):
-		Epoll epoll;
-		if (epoll.init_epoll() == 1)
+		//1)Start/init the server(s) + epoll_instance:
+		Webserver webserver;
+		if (webserver.init_epoll() == 1)
 		{
 			std::cerr << "Failed to initialize epoll" << std::endl;
 			return (1);
 		}
 		const std::vector<ServerConfig>& servers = file.getServer();
-		//Create vector of server objects: (depends on number of servers in config file)
-		int number_of_servers = file.getNumberOfServers();
-		std::vector<Server> webservers(number_of_servers);
-		//TODO: The following loop should start each server with the correct config data from parsing.
-		//I need to iterate over both vectors.
-		for (const auto& server : servers)
-		{
-			Server webservers(server);
-			if (webservers.startserver() == 1)
-			{
-				std::cerr << "Failed to start server." << std::endl;
-				return (1);
-			}
-			epoll.addServerSocket(webservers.getServerSocket());
-		}
-		// epoll.start_accepting_connections();
+		webserver.init_servers(servers);
 
-		//This still works (to be deleted once server class is working)
+		// Debug: Print server FDs after initialization
+		webserver.printServerFDs();
+
+		//2)Add server sockets to epoll interest list:
+		if (webserver.addServerSockets() == 1)
+		{
+			//CLOSE FDS;
+			return (1);
+		}
+
+		//3)Start accepting connections:
+	
+
+		//This still works (to be deleted once webserver class is working)
 		// TcpServer server = TcpServer(servers[0]);
 		// server.startListen();
 	}

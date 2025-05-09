@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ConfigParser.hpp"
-#include "Epoll.hpp"
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -13,7 +12,6 @@
 class Server{
 	private:
 		int _Server_socket;
-		// Epoll *_epoll; //take out
 		struct sockaddr_in _Server_address;
 		unsigned int _len_Server_address;
 		ServerConfig _config_data;
@@ -22,6 +20,7 @@ class Server{
 	public:
 		Server(ServerConfig config_data);
 		~Server();
+
 		int startserver();
 		int init_epoll();
 		int start_accepting_connections();

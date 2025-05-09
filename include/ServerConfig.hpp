@@ -7,7 +7,6 @@
 
 class ServerConfig{
 	private:
-		int _Server_socket; //Are you using this? I will delete it if not
 		std::string host;
 		std::string port;
 		std::string server_name;
