@@ -10,10 +10,10 @@
 #include <cstring>
 #include <netdb.h>
 #include <signal.h>
-#include <iostream>
 #include <fstream>
 #include "ServerConfig.hpp"
 #include <sstream>
+#include "Cgi.hpp"
 
 #define BUFFER_SIZE 4096 //This could be an issue
 
@@ -23,6 +23,7 @@ class TcpServer{
 		int m_new_socket;
 		struct sockaddr_in m_socket_address;
 		unsigned int m_len_socket_address;
+		Cgi cgi;
 
 		int startserver();
 		void acceptConnection(int &new_socket);
@@ -39,6 +40,7 @@ class TcpServer{
 		
 		
 		bool is_cgi_response(std::string response);
+		void return_forbidden();
 		void closeserver();
 };
 

@@ -133,8 +133,16 @@ void TcpServer::startListen()
 		if (client.parseClientRequest(request) < 0)
 			std::cout << "Error parsing client request" << std::endl;
 		
-		if (is_cgi_response(client.get_Request("url_path")))
-			std::cout << "				this: " << client.get_Request("url_path") << std::endl;
+		std::string path = client.get_Request("url_path");
+		if (is_cgi_response(path))
+		{
+			if (path.find_last_of("/") == (path.size() - 1))
+			{
+				return_forbidden();
+			}
+			else
+				cgi.run_cgi(client.get_Request("url_path"));
+		}
 		else
 			sendResponse();
 		std::cout << "------ Client Request parsed ------\n\n" << std::endl;
@@ -229,9 +237,39 @@ void TcpServer::sendResponse()
 }
 
 
+void TcpServer::return_forbidden()
+{
+	std::string htmlBody;
+		std::ifstream file("error_pages/403.html"); // check if there is a page on the config file, else use a base
+		if (!file.is_open())
+		{
+			std::cerr << "Error: Could not open home_page.html" << std::endl;
+			std::string errorBody = "<!DOCTYPE html><html lang=\"en\"><body><h1>500 Internal Server Error</h1><p>Could not load the requested file.</p></body></html>";
+			std::string response = "HTTP/1.1 500 Internal Server Error\r\n";
+			response += "Content-Type: text/html\r\n";
+			response += "Content-Length: " + std::to_string(errorBody.size()) + "\r\n";
+			response += "Connection: close\r\n";
+			response += "\r\n";
+			response += errorBody;
+			write(m_new_socket, response.c_str(), response.size());
+			return;
+		}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	htmlBody = buffer.str();
+	file.close();
+	std::string response = "HTTP/1.1 403 OK\r\n";
+	response += "Content-Type: text/html\r\n";
+	response += "Content-Length: " + std::to_string(htmlBody.size()) + "\r\n";
+	response += "Connection: close\r\n";
+	response += "\r\n";
+	response += htmlBody;
+	write(m_new_socket, response.c_str(), response.size());
+}
+
 bool TcpServer::is_cgi_response(std::string response)
 {
-	if (response.find("/cgi-bin") != std::string::npos)
+	if (response.find("/cgi-bin/") != std::string::npos)
 		return true;
 	return false;
 }

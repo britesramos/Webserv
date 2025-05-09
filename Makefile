@@ -19,6 +19,7 @@ SOURCE = main.cpp \
 		ServerConfig.cpp \
 		Location.cpp \
 		Client.cpp \
+		Cgi.cpp \
 
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))

@@ -261,6 +261,8 @@ bool ConfigParser::is_values_and_keys_set(std::string str, ServerConfig& current
 			std::cerr << "Not a valid, Host number" << std::endl;
 			return false;
 		}
+		if (value == "localhost")
+			value = "127.0.0.1";
 		current_server.setHost(value);
 	}
 	else if (key == "port")
