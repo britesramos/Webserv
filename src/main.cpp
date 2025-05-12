@@ -23,10 +23,16 @@ int main(int argc, char **argv)
 	signalInterrupter.sa_flags = 0;
 	sigaction(SIGINT, &signalInterrupter, 0);
 	//---------------------------------------------------------------------------------//
-	if (argc == 2)
+	if (argc <= 2)
 	{
 		ConfigParser file;
-		if (file.config_file_parsing(argv[1]) == false)
+		std::string input;
+
+		if (argc == 1)
+			input = "./config_files/config_2.conf";
+		else
+			input = argv[1];
+		if (file.config_file_parsing(input) == false)
 			return (1);
 
 		//1)Start/init the server(s) + epoll_instance:
@@ -39,8 +45,8 @@ int main(int argc, char **argv)
 		const std::vector<ServerConfig>& servers = file.getServer();
 		webserver.init_servers(servers);
 
-		// Debug: Print server FDs after initialization
-		webserver.printServerFDs();
+		// // Debug: Print server FDs after initialization
+		// webserver.printServerFDs();
 
 		//2)Add server sockets to epoll interest list:
 		if (webserver.addServerSockets() == 1)
@@ -67,7 +73,7 @@ int main(int argc, char **argv)
 	else
 	{
 		std::cerr << "--- Incorrect amout of arguments ---" << std::endl;
-		std::cerr << "   PROVIDE: ./webserv <file>.config" << std::endl;
+		std::cerr << "   PROVIDE: none or only ONE config file" << std::endl;
 		return (1);
 	}
 }

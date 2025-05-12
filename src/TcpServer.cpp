@@ -118,8 +118,8 @@ void TcpServer::startListen()
 		acceptConnection(this->m_new_socket);
 		Client client(this->m_new_socket); //Create client object to parse the client request
 		
-		char buffer[BUFFER_SIZE] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
-		bytesReceived = read(this->m_new_socket, buffer, BUFFER_SIZE);
+		char buffer[4096] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
+		bytesReceived = read(this->m_new_socket, buffer, 4096);
 		if (bytesReceived < 0)
 		{
 			std::cerr << "Failed to read bytes from client socket connection" << std::endl;
@@ -140,8 +140,9 @@ void TcpServer::startListen()
 			{
 				return_forbidden();
 			}
-			else
-				cgi.run_cgi(client.get_Request("url_path"));
+			else{
+				cgi.run_cgi(client);
+			}
 		}
 		else
 			sendResponse();
