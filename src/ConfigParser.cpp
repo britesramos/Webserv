@@ -91,11 +91,11 @@ bool ConfigParser::config_file_parsing(char *argv)
 	bool in_location_block = false;
 
 	if (is_file_extension_correct(argv) == false)
-		return (1);
+		return (false);
 	else
 	{
 		if (is_possible_use_file(argv) == false)
-			return (1);
+			return (false);
 	}
 	const std::vector<std::string>& lines = getLines();
 	for (size_t i = 0; i < lines.size(); ++i) {

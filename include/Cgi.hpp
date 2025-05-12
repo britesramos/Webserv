@@ -5,13 +5,19 @@
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include "Client.hpp"
 
 class Cgi {
+	private:
+		pid_t pipefd[2];
+		
 	public:
 		Cgi();
 		~Cgi();
 
-		void run_cgi(std::string path);
+		void run_cgi(Client& client);
 
 };
 #endif

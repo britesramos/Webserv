@@ -11,11 +11,26 @@ Cgi::~Cgi()
 }
 
 
-void Cgi::run_cgi(std::string path)
+void Cgi::run_cgi(Client& client)
 {
-	if (path.find_last_of("/") == (path.size() - 1))
-	{
-		std::cout << " 							nao deveria estar aqui!" << std::endl;
-	}
+    int pipe_fd[2];
+    pipe(pipe_fd);
+    
+    pid_t pid = fork();
+    if (pid == 0) {
+		// child
+        dup2(pipe_fd[1], STDOUT_FILENO);
+        close(pipe_fd[0]); // close unused read
+
+        exit(1); // fail-safe
+    } else {
+		// parent
+        close(pipe_fd[1]); // parent reads from pipe
+        char buffer[4096];
+        read(pipe_fd[0], buffer, sizeof(buffer));
+        std::cout << buffer; // send this to client
+        waitpid(pid, NULL, 0);
+    }
+
 }
 

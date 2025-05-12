@@ -21,6 +21,7 @@ SOURCE = main.cpp \
 		Server.cpp \
 		Webserver.cpp \
 		Cgi.cpp \
+		TcpServer.cpp \
 
 
 SRC = $(addprefix $(SRC_DIR)/, $(SOURCE))
