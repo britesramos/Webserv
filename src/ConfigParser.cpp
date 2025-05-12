@@ -81,7 +81,7 @@ void ConfigParser::set_number_of_server(int number)
 	this->number_of_server = number;
 }
 
-bool ConfigParser::config_file_parsing(char *argv)
+bool ConfigParser::config_file_parsing(std::string input)
 {
 	ServerConfig current_server;
 	Location current_location;
@@ -90,11 +90,11 @@ bool ConfigParser::config_file_parsing(char *argv)
 	bool in_server_block = false;
 	bool in_location_block = false;
 
-	if (is_file_extension_correct(argv) == false)
+	if (is_file_extension_correct(input) == false)
 		return (false);
 	else
 	{
-		if (is_possible_use_file(argv) == false)
+		if (is_possible_use_file(input) == false)
 			return (false);
 	}
 	const std::vector<std::string>& lines = getLines();

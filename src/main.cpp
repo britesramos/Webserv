@@ -23,10 +23,16 @@ int main(int argc, char **argv)
 	signalInterrupter.sa_flags = 0;
 	sigaction(SIGINT, &signalInterrupter, 0);
 	//---------------------------------------------------------------------------------//
-	if (argc == 2)
+	if (argc <= 2)
 	{
 		ConfigParser file;
-		if (file.config_file_parsing(argv[1]) == false)
+		std::string input;
+
+		if (argc == 1)
+			input = "./config_files/config_2.conf";
+		else
+			input = argv[1];
+		if (file.config_file_parsing(input) == false)
 			return (1);
 
 		//1)Start/init the server(s) + epoll_instance:
@@ -37,7 +43,7 @@ int main(int argc, char **argv)
 			return (1);
 		}
 		const std::vector<ServerConfig>& servers = file.getServer();
-		// webserver.init_servers(servers);
+		webserver.init_servers(servers);
 
 		// // Debug: Print server FDs after initialization
 		// webserver.printServerFDs();
@@ -61,13 +67,13 @@ int main(int argc, char **argv)
 		}
 
 		//This still works (to be deleted once webserver class is working)
-		TcpServer server = TcpServer(servers[0]);
-		server.startListen();
+		// TcpServer server = TcpServer(servers[0]);
+		// server.startListen();
 	}
 	else
 	{
 		std::cerr << "--- Incorrect amout of arguments ---" << std::endl;
-		std::cerr << "   PROVIDE: ./webserv <file>.config" << std::endl;
+		std::cerr << "   PROVIDE: none or only ONE config file" << std::endl;
 		return (1);
 	}
 }

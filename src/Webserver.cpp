@@ -124,6 +124,7 @@ int Webserver::process_request(int client_fd){
 		//Remove client from epoll:
 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 		//Remove client from clients map:
+
 		// _servers.removeClient(client_fd);
 		std::cout << "Client disconnected: " << client_fd << std::endl;
 		return 1;
