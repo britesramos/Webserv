@@ -9,6 +9,23 @@ Client::~Client(){
 	if (this->_Client_socket != -1)
 		close(this->_Client_socket);
 }
+
+Client::Client(const Client& other){
+	this->_Client_socket = other._Client_socket;
+	this->_Client_RequestMap = other._Client_RequestMap;
+	this->_Client_ResponseMap = other._Client_ResponseMap;
+}
+
+Client& Client::operator=(const Client& other){
+	if (this != &other)
+	{
+		this->_Client_socket = other._Client_socket;
+		this->_Client_RequestMap = other._Client_RequestMap;
+		this->_Client_ResponseMap = other._Client_ResponseMap;
+	}
+	return *this;
+}
+
 //Finds the position of the delimiter in the string and returns it
 int Client::getpos(std::string str, std::string delimiter, int start){
 	size_t pos = str.find(delimiter, start);
