@@ -38,7 +38,7 @@ class TcpServer{
 		void startListen();
 		
 		
-		bool is_cgi_response(std::string response);
+		bool is_cgi(std::string response);
 		void return_forbidden();
 		void closeserver();
 };
