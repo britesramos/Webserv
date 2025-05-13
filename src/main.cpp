@@ -37,12 +37,12 @@ int main(int argc, char **argv)
 			return (1);
 
 		//1)Start/init the server(s) + epoll_instance:
-		Webserver webserver;
-		if (webserver.init_epoll() == 1)
-		{
-			std::cerr << "Failed to initialize epoll" << std::endl;
-			return (1);
-		}
+		// Webserver webserver;
+		// if (webserver.init_epoll() == 1)
+		// {
+		// 	std::cerr << "Failed to initialize epoll" << std::endl;
+		// 	return (1);
+		// }
 		const std::vector<ServerConfig>& servers = file.getServer();
 		// webserver.init_servers(servers);
 

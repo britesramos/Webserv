@@ -22,94 +22,80 @@ int Cgi::get_cgi_out(int pos)
 
 void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 {
-	std::vector<std::string> env_tmp;
-
 	std::string method = client.get_Request("method");
-	env_tmp.push_back("REQUEST_METHOD=" + method);
-	std::string script = client.get_Request("method");
-	env_tmp.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	env_tmp.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	std::string path = client.get_Request("url_path"); // need to parse? 
-	env_tmp.push_back("SCRIPT_NAME=" + path);
+	this->tmp_env.push_back("REQUEST_METHOD=" + method);
+	this->tmp_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	this->tmp_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	this->tmp_env.push_back("SCRIPT_NAME=" + this->path);
 
 	if (method == "POST")
 	{
 		std::string content_lenght = client.get_Request("content_length");
 		if (!content_lenght.empty())
 		{
-			env_tmp.push_back("CONTENT_LENGTH=" + content_lenght);
+			this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
 		}
 	}
 
-	for (size_t i = 0; i < env_tmp.size(); ++i)
-		this->env.push_back(const_cast<char*>(env_tmp[i].c_str()));
-
+	for (size_t i = 0; i < this->tmp_env.size(); ++i)
+		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
 
+	for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
+		std::cout << "				" << this->env[i] << std::endl;
+	}
 }
 
 
 void Cgi::run_cgi(Client& client)
 {
-	// pid_t pid;
-	// // int cgi_in[2];
-	// // int cgi_out[2];
+	pid_t pid;
 
-	// if (pipe(cgi_in) == -1 || pipe(cgi_out) == -1)
-	// {
-	// 	perror("Pipe");
-	// 	return ;
-	// }
+	if (pipe(cgi_in) == -1 || pipe(cgi_out) == -1)
+	{
+		perror("Pipe");
+		return ;
+	}
 
-	// pid = fork();
-	// if (pid == -1)
-	// {
-	// 	perror("Fork");
-	// 	return ;
-	// }
+	pid = fork();
+	if (pid == -1)
+	{
+		perror("Fork");
+		return ;
+	}
 
-	// if (pid == 0)
-	// {
-	// 	//child
-	// 	dup2(this->cgi_in[READ], STDIN_FILENO);
-	// 	close(this->cgi_in[WRITE]);
-	// 	dup2(this->cgi_out[WRITE], STDOUT_FILENO);
-	// 	close(this->cgi_out[WRITE]);
-	// 	close(this->cgi_out[READ]);
+	if (pid == 0)
+	{
+		//child
+		// dup2(this->cgi_in[READ], STDIN_FILENO);
+		// close(this->cgi_in[WRITE]);
+		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
+		close(this->cgi_out[WRITE]);
+		close(this->cgi_out[READ]);
 
-		// const char* cgi_program = client.get_Request("url_path").c_str();
-		// const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
-		// std::string method_str = "REQUEST_METHOD=" + client.get_Request("method");
-		// std::string content_length_str = "CONTENT_LENGTH=" + client.get_Request("Content-Length");
-		// std::string env[] = { "SERVER_PROTOCOL=HTTP/1.1", "GATEWAY_INTERFACE=CGI/1.1",
-		// 	method_str, content_length_str,
-		// 	nullptr
-		// };
+		this->path = "." + client.get_Request("url_path"); // just to test, will not have the dot
+		const char* cgi_program = path.c_str();
+		const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
 
-		// int i = 0;
-		// while(env[i])
-		// {
-		// 	std::cout << env << std::endl;
-		// 	i++;
-		// }
-
-		// std::vector<std::string> env = {
-		// 	"SERVER_PROTOCOL=HTTP/1.1",
-		// 	"GATEWAY_INTERFACE=CGI/1.1",
-		// 	method_str,
-		// 	// content_length_str
-		// };
 		creating_cgi_env(client);
-		for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
-			std::cout << "				" << this->env[i] << std::endl;
-		}
-		// execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(env));
-	// }
-	// else
-	// {
-	// 	//parent
-	// }
+		execve(argv[0], const_cast<char* const*>(argv), env.data());
+		perror("execve fail");
+		exit(1);
+	}
+	else
+	{
+		//parent
+		close(this->cgi_out[WRITE]); // TODO: return pipe for the write function 
+
+		char buffer[1024]; // just for testing
+        ssize_t nbytes;
+        while ((nbytes = read(this->cgi_out[READ], buffer, sizeof(buffer) - 1)) > 0) {
+            buffer[nbytes] = '\0';
+            std::cout << "CGI output: \n" << buffer; // to print in the terminal
+        }
+        close(this->cgi_out[READ]);
+		int status;
+		waitpid(pid, &status, WNOHANG);
+	}
 
 }
-
-

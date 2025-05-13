@@ -18,6 +18,8 @@ class Cgi {
 		int cgi_in[2];
 		int cgi_out[2];
 		std::vector<char*> env;
+		std::vector<std::string> tmp_env;
+		std::string path;
 	public:
 		Cgi();
 		~Cgi();
