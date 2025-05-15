@@ -87,3 +87,16 @@ const std::unordered_map<int, std::shared_ptr<Client>>& Server::getClients() con
 int::Server::getServerSocket() const{
 	return this->_Server_socket;
 }
+
+//Utils
+
+void Server::printClientRequests() const{
+	for (const auto& client_pair : _clients) {
+		std::cout << "Client FD: " << client_pair.first << std::endl;
+		const auto& client = client_pair.second;
+		const auto& request_map = client->get_RequestMap();
+		for (const auto& request_pair : request_map) {
+			std::cout << request_pair.first << ": " << request_pair.second << std::endl;
+		}
+	}
+}
