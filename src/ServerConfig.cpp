@@ -75,7 +75,7 @@ std::string ServerConfig::getErrorPage(int code) const
 		return ("");
 }
 
-const std::vector<Location>& ServerConfig::getLocations() const
+const std::unordered_map<std::string, Location>& ServerConfig::getLocations() const
 {
 	return (this->location_blocks);
 }

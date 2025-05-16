@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include "../include/Location.hpp"
 
 class ServerConfig{
@@ -11,7 +12,7 @@ class ServerConfig{
 		std::string port;
 		std::string server_name;
 		int max_client_size;
-		std::vector<Location> location_blocks;
+		std::unordered_map<std::string, Location> location_blocks;
 		std::map<int, std::string> error_pages;
 
 	public:
@@ -32,7 +33,7 @@ class ServerConfig{
 		std::string getServerName() const;
 		int getMaxClientSize() const;
 		std::string getErrorPage(int code) const;
-		const std::vector<Location>& getLocations() const;
+		const std::unordered_map<std::string, Location>& getLocations() const;
 
 		void print() const;
 };
