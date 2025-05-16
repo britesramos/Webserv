@@ -32,9 +32,10 @@ int main(int argc, char **argv)
 			input = "./config_files/config_2.conf";
 		else
 			input = argv[1];
+
 		if (file.config_file_parsing(input) == false)
 			return (1);
-
+		
 		//1)Start/init the server(s) + epoll_instance:
 		Webserver webserver;
 		if (webserver.init_epoll() == 1)
@@ -45,17 +46,17 @@ int main(int argc, char **argv)
 		const std::vector<ServerConfig>& servers = file.getServer();
 		webserver.init_servers(servers);
 
-		// // Debug: Print server FDs after initialization
-		// webserver.printServerFDs();
+		// // // Debug: Print server FDs after initialization
+		// // webserver.printServerFDs();
 
-		//2)Add server sockets to epoll interest list:
+		// //2)Add server sockets to epoll interest list:
 		if (webserver.addServerSockets() == 1)
 		{
 			//CLOSE FDS;
 			return (1);
 		}
 
-		//3)Start accepting connections:
+		// //3)Start accepting connections:
 		if (webserver.main_loop() == 1)
 		{
 			//Clean up and close fds:

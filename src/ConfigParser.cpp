@@ -89,6 +89,7 @@ bool ConfigParser::config_file_parsing(std::string input)
 	int close_curly_b = 0;
 	bool in_server_block = false;
 	bool in_location_block = false;
+	std::string path;
 
 	if (is_file_extension_correct(input) == false)
 		return (false);
@@ -117,7 +118,6 @@ bool ConfigParser::config_file_parsing(std::string input)
 				in_location_block = true;
 				current_location = Location();
 
-				std::string path;
 				std::string word = "location";
 				std::size_t start = str.find(word) + word.length();
 				path = str.substr(start);
@@ -137,7 +137,7 @@ bool ConfigParser::config_file_parsing(std::string input)
 				if (str.find('=') != std::string::npos)
 				{
 					if(!is_values_and_keys_set(str, current_server))
-						return false;
+					return false;
 				}
 				else if (str.find('}') != std::string::npos)
 				{
@@ -154,13 +154,14 @@ bool ConfigParser::config_file_parsing(std::string input)
 			else if (str.find('}') != std::string::npos)
 			{
 				close_curly_b++;
-				current_server.addLocation(current_location);
+				// std::cout << "					this is the path now: " << path << std::endl;
+				current_server.addLocation(path, current_location);
 				in_location_block = false;
 			}
 			else
 			{
 				if(!is_static_content_load(str, current_location))
-					return false;
+				return false;
 			}
 		}
 		else

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <sys/epoll.h>
+#include "../include/Cgi.hpp"
 
 class Webserver{
 	private:
@@ -12,6 +13,7 @@ class Webserver{
 		int _epoll_event_count;
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
+		Cgi cgi;
 
 	public:
 		Webserver();

@@ -134,15 +134,16 @@ void TcpServer::startListen()
 			std::cout << "Error parsing client request" << std::endl;
 		
 		std::string path = client.get_Request("url_path");
-		if (is_cgi_response(path))
+		if (is_cgi(path))
 		{
-			if (path.find_last_of("/") == (path.size() - 1))
-			{
-				return_forbidden();
-			}
-			else{
+			std::cout << "			path: " << path << std::endl;
+			// if (path.find_last_of("/") == (path.size() - 1))
+			// {
+			// 	return_forbidden();
+			// }
+			// else{
 				cgi.run_cgi(client);
-			}
+			// }
 		}
 		else
 			sendResponse();
@@ -268,9 +269,9 @@ void TcpServer::return_forbidden()
 	write(m_new_socket, response.c_str(), response.size());
 }
 
-bool TcpServer::is_cgi_response(std::string response)
+bool TcpServer::is_cgi(std::string response)
 {
-	if (response.find("/cgi-bin/") != std::string::npos)
+	if (response.find(".py") != std::string::npos)
 		return true;
 	return false;
 }
