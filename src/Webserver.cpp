@@ -129,7 +129,7 @@ int Webserver::send_response(int client_fd){
 	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos)
 	{
 		std::cout << "CGI response" << std::endl;
-		//redirect to CGI
+		cgi.run_cgi(*client);
 	}
 	if (client->get_Request("method") == "GET")
 		handle_get_request(client_fd, client->get_Request("url_path"));
