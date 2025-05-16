@@ -8,6 +8,7 @@ class Webserver{
 		int _epoll_fd;
 		int _epoll_event_count;
 		std::vector<Server> _servers;
+		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
 
 	public:
 		Webserver();
@@ -17,13 +18,13 @@ class Webserver{
 		int init_epoll();
 		int addServerSockets();
 		int addEpollFd(int new_connection_socket_fd);
-		int epoll_wait_util();
+		int epoll_wait_util(struct epoll_event* events);
 
 		//Server methods
 		int init_servers(const std::vector<ServerConfig>& config_data_servers);
 		int main_loop();
-		int start_accepting_connections(Server& server);
-		int is_server_fd(int fd);
+		int accept_connection(Server& server);
+		bool is_server_fd(int fd);
 		int process_request(int client_fd);
 		// int send_response(int client_fd);
 
@@ -32,5 +33,6 @@ class Webserver{
 
 		//Getters
 		const std::vector<Server>& get_servers() const;
+
 		int get_epoll_fd() const;
 };

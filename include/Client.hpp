@@ -50,6 +50,8 @@ class Client {
 	public:
 		Client(int socket_fd);
 		~Client();
+		Client(const Client& other);
+		Client& operator=(const Client& other);
 
 		//Parsing methods
 		int getpos(std::string str, std::string delimiter, int start);
