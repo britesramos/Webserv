@@ -2,6 +2,9 @@
 
 #include "Server.hpp"
 #include <vector>
+#include <sstream>
+#include <iostream>
+#include <sys/epoll.h>
 
 class Webserver{
 	private:
@@ -26,13 +29,22 @@ class Webserver{
 		int accept_connection(Server& server);
 		bool is_server_fd(int fd);
 		int process_request(int client_fd);
-		// int send_response(int client_fd);
+		int send_response(int client_fd);
+
+		//Handling Responses
+		// int handle_cgi_request(int client_fd, const std::string& url_path);
+		int handle_get_request(int client_fd, const std::string& url_path);
+		// int handle_post_request(int client_fd, const std::string& url_path);
+		// int handle_delete_request(int client_fd, const std::string& url_path);
+		int handle_error(int client_fd, int error_code, std::string error_message);
+		std::string build_response_body(const std::string& url_path);
 
 		//Debug methods
 		void printServerFDs() const;
 
 		//Getters
 		const std::vector<Server>& get_servers() const;
+		Server* getServerBySocketFD(int server_socket_fd);
 
 		int get_epoll_fd() const;
 };
