@@ -238,6 +238,7 @@ int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	std::cout << "GET request for: " << url_path << std::endl;
 	std::string status_line = "HTTP/1.1 200 OK\r\n";
 	std::string body;
+	// std::string root = getServerBySocketFD(client_server_map.find(client_fd))->_config_data.getLocations();
 	if (url_path == "/")
 		body = build_response_body("www/html" + url_path + ".html");
 	else
