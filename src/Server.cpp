@@ -80,6 +80,10 @@ std::shared_ptr<Client>& Server::getclient(int client_fd){
 	throw std::runtime_error("Client not found");
 }
 
+ServerConfig Server::getServerConfig() const{
+	return this->_config_data;
+}
+
 const std::unordered_map<int, std::shared_ptr<Client>>& Server::getClients() const{
 	return this->_clients;
 }

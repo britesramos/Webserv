@@ -44,7 +44,11 @@ int main(int argc, char **argv)
 			return (1);
 		}
 		const std::vector<ServerConfig>& servers = file.getServer();
-		webserver.init_servers(servers);
+		if (webserver.init_servers(servers) == 1)
+		{
+			std::cerr << "Failed to initialize servers" << std::endl;
+			return (1);
+		}
 
 		// // // Debug: Print server FDs after initialization
 		// // webserver.printServerFDs();

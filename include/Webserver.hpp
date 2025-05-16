@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sys/epoll.h>
 #include "../include/Cgi.hpp"
+#include "../include/Location.hpp"
 
 class Webserver{
 	private:
@@ -40,6 +41,7 @@ class Webserver{
 		// int handle_delete_request(int client_fd, const std::string& url_path);
 		int handle_error(int client_fd, int error_code, std::string error_message);
 		std::string build_response_body(const std::string& url_path);
+		std::string findRoot(int client_fd, const std::string& url_path);
 
 		//Debug methods
 		void printServerFDs() const;

@@ -126,7 +126,7 @@ int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	std::string response;
-	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos)
+	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos) //Passar isto para dentro de cada method.
 	{
 		std::cout << "CGI response" << std::endl;
 		cgi.run_cgi(*client);
@@ -149,7 +149,7 @@ bool Webserver::is_server_fd(int fd){
 			return true;
 		}
 	}
-	std::cout << RED << "Error: Socket fd is not a server socket fd: " << fd << std::endl;
+	std::cout << RED << "Socket fd is not a server socket fd: " << fd << std::endl;
 	return false;
 }
 
@@ -223,26 +223,56 @@ int Webserver::accept_connection(Server& server){
 std::string Webserver::build_response_body(const std::string& url_path){
 	std::cout << "Building response body for: " << url_path << std::endl;
 	std::ifstream html_file(url_path);
+	std::ostringstream body_stream;
 	if (!html_file.is_open()){
 		std::cerr << RED << "Error: Could not open file: " << url_path << std::endl;
-		return "<html><body><h1>404 Not Found</h1></body></html>"; //TEMP
+		std::string error_page = "error_pages/404.html";
+		std::ifstream html_error_404(error_page);
+		if (!html_error_404.is_open()){
+			std::cerr << RED << "Error: Could not open error page: " << error_page << std::endl;
+			return "<html><body><h1>404 Not Found</h1></body></html>";
+		}
+		body_stream << html_error_404.rdbuf();
+		std::string body = body_stream.str();
+		html_error_404.close();
+		return body;
 	}
-	std::ostringstream body_stream;
 	body_stream << html_file.rdbuf();
 	std::string body = body_stream.str();
 	html_file.close();
 	return body;
 }
 
+//TODO: It is not working for jpg images. The wrong path is send, there is a segfault with this method.
+std::string Webserver::findRoot(int client_fd, const std::string& url_path){
+	std::string root;
+	Server* sever = getServerBySocketFD(client_server_map.find(client_fd)->second);
+	if (sever == NULL){
+		std::cerr << RED << "Error: Server not found for client fd: " << client_fd << std::endl;
+		return "";
+	}
+	std::unordered_map<std::string, Location> locations = sever->getServerConfig().getLocations();
+	if (locations.empty()){
+		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
+		return "";
+	}
+	root = locations.find(url_path)->second.getRoot();
+	if (root.empty()){
+		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
+		return "";
+	}
+	return root;
+}
+
 int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	std::cout << "GET request for: " << url_path << std::endl;
 	std::string status_line = "HTTP/1.1 200 OK\r\n";
 	std::string body;
-	// std::string root = getServerBySocketFD(client_server_map.find(client_fd))->_config_data.getLocations().find(url_path)->second.getRoot(); //Eduarda is fixing the input to make this work.
+	std::string root = findRoot(client_fd, url_path);
 	if (url_path == "/")
-		body = build_response_body("www/html" + url_path + ".html");
+		body = build_response_body(root + url_path + ".html");
 	else
-		body = build_response_body("www/html" + url_path);
+		body = build_response_body(root + url_path);
 	// std::cout << "Body: " << body << std::endl; //temporary, should be removed
 	std::string response = status_line;
 	response += "Content-Type: text/html\r\n";
