@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <vector>
 #include "Client.hpp"
+#include "Server.hpp"
 
 #define WRITE 1
 #define READ 0
@@ -20,13 +21,20 @@ class Cgi {
 		std::vector<char*> env;
 		std::vector<std::string> tmp_env;
 		std::string path;
+		std::string config_root;
+		bool get;
+		bool post;
+		bool del;
+		int code_status;
 	public:
 		Cgi();
 		~Cgi();
 
+		void set_code_status(int code);
+		int get_code_status() const;
 		int get_cgi_in(int pos);
 		int get_cgi_out(int pos);
-		void run_cgi(Client& client);
+		void run_cgi(Server& server, Client& client);
 		void creating_cgi_env(Client &client);
 
 };

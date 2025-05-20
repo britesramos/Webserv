@@ -129,9 +129,18 @@ int Webserver::send_response(int client_fd){
 	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos)
 	{
 		std::cout << "CGI response" << std::endl;
-		cgi.run_cgi(*client);
+		cgi.run_cgi(*server, *client);
+		if (cgi.get_code_status() == 404) // this not work as I expected TODO: ask Sara
+		{
+			handle_error(client_fd, 404, "Not Found");
+		}
+		else if (cgi.get_code_status() == 403)
+		{
+			handle_error(client_fd, 403, "Forbidden");
+		}
+
 	}
-	if (client->get_Request("method") == "GET")
+	else if (client->get_Request("method") == "GET")
 		handle_get_request(client_fd, client->get_Request("url_path"));
 	// if (client->get_Request("method") == "POST")
 	// 	handle_post_request(client_fd, client->get_Request("url_path"));
@@ -317,4 +326,3 @@ void Webserver::printServerFDs() const {
 		std::cout << "Server " << i << " FD: " << _servers[i].getServerSocket() << std::endl;
 	}
 }
- 
