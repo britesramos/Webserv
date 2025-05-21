@@ -74,7 +74,7 @@ void Cgi::run_cgi(Server& server, Client& client)
 				this->del = true;
 		}
 		bool config_autoindex = config["/cgi-bin"].getAutoindex();
-		if (config_autoindex == true) // this is wrong, shoudl just be forbidden for the folder not for the hole cgi path
+		if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
 		{
 			this->code_status = 403;
 			return ;
@@ -129,6 +129,7 @@ void Cgi::run_cgi(Server& server, Client& client)
             buffer[nbytes] = '\0';
             std::cout << "CGI output: \n" << buffer; // to print in the terminal
         }
+		this->code_status = 200;
         close(this->cgi_out[READ]);
 		int status;
 		waitpid(pid, &status, WNOHANG);
