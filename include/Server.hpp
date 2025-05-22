@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "Client.hpp"
+#include <memory>
 
 #define BUFFER_SIZE 1024
 
@@ -15,7 +16,7 @@ class Server{
 		struct sockaddr_in _Server_address;
 		unsigned int _len_Server_address;
 		ServerConfig _config_data;
-		std::unordered_map<int, Client> _clients;
+		std::unordered_map<int, std::shared_ptr<Client>> _clients;
 
 	public:
 		Server(ServerConfig config_data);
@@ -28,6 +29,10 @@ class Server{
 
 		//Getters
 		int getServerSocket() const;
-		Client& getclient(int client_fd);
+		ServerConfig getServerConfig() const;
+		std::shared_ptr<Client>& getclient(int client_fd);
+		const std::unordered_map<int, std::shared_ptr<Client>>& getClients() const;
 		
+		//Utils
+		void printClientRequests() const;
 };

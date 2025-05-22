@@ -118,8 +118,8 @@ void TcpServer::startListen()
 		acceptConnection(this->m_new_socket);
 		Client client(this->m_new_socket); //Create client object to parse the client request
 		
-		char buffer[BUFFER_SIZE] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
-		bytesReceived = read(this->m_new_socket, buffer, BUFFER_SIZE);
+		char buffer[4096] = {0}; // TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
+		bytesReceived = read(this->m_new_socket, buffer, 4096);
 		if (bytesReceived < 0)
 		{
 			std::cerr << "Failed to read bytes from client socket connection" << std::endl;
@@ -134,14 +134,16 @@ void TcpServer::startListen()
 			std::cout << "Error parsing client request" << std::endl;
 		
 		std::string path = client.get_Request("url_path");
-		if (is_cgi_response(path))
+		if (is_cgi(path))
 		{
-			if (path.find_last_of("/") == (path.size() - 1))
-			{
-				return_forbidden();
-			}
-			else
-				cgi.run_cgi(client.get_Request("url_path"));
+			std::cout << "			path: " << path << std::endl;
+			// if (path.find_last_of("/") == (path.size() - 1))
+			// {
+			// 	return_forbidden();
+			// }
+			// else{
+				cgi.run_cgi(client);
+			// }
 		}
 		else
 			sendResponse();
@@ -267,9 +269,9 @@ void TcpServer::return_forbidden()
 	write(m_new_socket, response.c_str(), response.size());
 }
 
-bool TcpServer::is_cgi_response(std::string response)
+bool TcpServer::is_cgi(std::string response)
 {
-	if (response.find("/cgi-bin/") != std::string::npos)
+	if (response.find(".py") != std::string::npos)
 		return true;
 	return false;
 }

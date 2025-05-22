@@ -50,7 +50,7 @@ int Server::startserver(){
 }
 
 int Server::addClient(int new_connection_socket_fd){
-	Client new_client(new_connection_socket_fd);
+	auto new_client = std::make_shared<Client>(new_connection_socket_fd);
 	auto insert_result = _clients.insert({new_connection_socket_fd, new_client});
 	if (!insert_result.second) {
 		std::cerr << RED << "Error adding client to clients map" << std::endl;
@@ -72,13 +72,35 @@ int Server::removeClient(int client_fd){
 }
 
 //Getters
-Client& Server::getclient(int client_fd){
+std::shared_ptr<Client>& Server::getclient(int client_fd){
 	auto it = _clients.find(client_fd);
 	if (it != _clients.end()) {
 		return it->second;
 	}
 	throw std::runtime_error("Client not found");
 }
+
+ServerConfig Server::getServerConfig() const{
+	return this->_config_data;
+}
+
+const std::unordered_map<int, std::shared_ptr<Client>>& Server::getClients() const{
+	return this->_clients;
+}
+
 int::Server::getServerSocket() const{
 	return this->_Server_socket;
+}
+
+//Utils
+
+void Server::printClientRequests() const{
+	for (const auto& client_pair : _clients) {
+		std::cout << "Client FD: " << client_pair.first << std::endl;
+		const auto& client = client_pair.second;
+		const auto& request_map = client->get_RequestMap();
+		for (const auto& request_pair : request_map) {
+			std::cout << request_pair.first << ": " << request_pair.second << std::endl;
+		}
+	}
 }

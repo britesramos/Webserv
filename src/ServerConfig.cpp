@@ -40,9 +40,10 @@ void ServerConfig::setErrorPage(int error_number, std::string page)
 	this->error_pages[error_number] = page;
 }
 
-void ServerConfig::addLocation(const Location& location)
+void ServerConfig::addLocation(std::string path, Location& location)
 {
-	this->location_blocks.push_back(location);
+	this->location_blocks.insert(std::make_pair(path, location));
+	// this->location_blocks.push_back(location);
 }
 
 
@@ -75,7 +76,7 @@ std::string ServerConfig::getErrorPage(int code) const
 		return ("");
 }
 
-const std::vector<Location>& ServerConfig::getLocations() const
+const std::unordered_map<std::string, Location>& ServerConfig::getLocations() const
 {
 	return (this->location_blocks);
 }
@@ -92,8 +93,10 @@ void ServerConfig::print() const {
 	}
 
 	std::cout << "Locations:\n";
-	for (size_t i = 0; i < location_blocks.size(); ++i) {
-		std::cout << "-- Location Block " << i << " --\n";
-		location_blocks[i].print();
+	for (std::unordered_map<std::string, Location>::const_iterator it = location_blocks.begin(); it != location_blocks.end(); ++it) {
+		std::cout << "  " << it->first << " -> ";
+		it->second.print();
+		std::cout << "\n";
 	}
+
 }
