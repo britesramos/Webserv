@@ -156,7 +156,7 @@ int Webserver::start_accepting_connections(Server& server){
 			return 1;
 		}
 		//ADD CLIENT TO SERVER CLIENTS MAP:
-		server.addClient(new_connection_socket_fd); 
+		server.addClient(new_connection_socket_fd); //TODO: Client is closing. Something related to out of scope Client instance?
 	}
 	return 0;
 }
