@@ -14,7 +14,7 @@ class ServerConfig{
 		std::string server_name;
 		int max_client_size;
 		std::unordered_map <std::string, Location> location_blocks;
-		std::map<int, std::string> error_pages;
+		std::map<std::string, std::string> error_pages;
 
 	public:
 		ServerConfig();
@@ -34,6 +34,7 @@ class ServerConfig{
 		std::string getServerName() const;
 		int getMaxClientSize() const;
 		std::string getErrorPage(int code) const;
+		std::map<std::string, std::string> getErrorPages() const;
 		const std::unordered_map<std::string, Location>& getLocations() const;
 
 		void print() const;

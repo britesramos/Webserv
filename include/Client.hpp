@@ -32,7 +32,8 @@
 
 class Client {
 	private:
-		int			_Client_socket; //socket descriptor
+		int											_Client_socket; //socket descriptor
+		std::string									_error_code;
 		std::unordered_map<std::string, std::string> _Client_RequestMap; //Request
 		std::unordered_map<std::string, std::string> _Client_ResponseMap; //Response
 		// std::string _Client_http_method; //GET POST DELETE
@@ -62,6 +63,7 @@ class Client {
 		
 		//Getters
 		int get_Client_socket();
+		std::string get_error_code();
 		const std::unordered_map<std::string, std::string>& get_RequestMap() const;
 		const std::unordered_map<std::string, std::string>& get_ResponseMap() const;
 		std::string get_Request(std::string key);
@@ -69,6 +71,7 @@ class Client {
 
 		//Setters
 		void set_Client_socket(int socket_fd);
+		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
 		void set_Response(std::string key, std::string value);
 

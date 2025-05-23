@@ -100,10 +100,8 @@ int Webserver::main_loop(){
 				//If the socket fd is a client socket fd, there is a request to read and a response to send:
 				else {
 					std::cout << "Processing client fd: " << events[i].data.fd << std::endl; //Temporary, should be removed
-					if (process_request(events[i].data.fd) == -1){
-						std::cout << "HOLLA MUCHACHOS!" << std::endl;
+					if (process_request(events[i].data.fd) == -1)
 						break ;
-					}
 
 					//Print client requests for all servers (TO BE DELETED OR COMMENTED OUT):
 					// std::cout << "\n\n================= !!! CLIENT REQUESTS !!! =================" << std::endl;
@@ -141,8 +139,9 @@ int Webserver::send_response(int client_fd){
 		handle_post_request(client_fd, client->get_Request("url_path"));
 	// if (client->get_Request("method") == "DELETE")
 	// 	handle_delete_request(client_fd, client->get_Request("url_path"));
-	else
-		handle_error(client_fd, 400, "Bad Request");
+	// TODO:
+	if (client->get_error_code() != "200")
+		handle_error(client_fd);
 	return 0;
 }
 
@@ -343,10 +342,21 @@ void Webserver::handle_success(int client_fd){
 }
 
 //TODO: Clean up send and building header (use previous method)
-int Webserver::handle_error(int client_fd, int error_code, std::string error_message){
+//TODO: If it doesnt exist. It should fall back in the same error.
+int Webserver::handle_error(int client_fd){
+	std::shared_ptr<Client>& client = getClientByClientFD(client_fd);
+	std::string error_code = client->get_error_code();
+
+	int server_fd = this->client_server_map[client_fd];
+	Server* server = getServerBySocketFD(server_fd);
+	ServerConfig config = server->getServerConfig();
+	std::map<std::string, std::string> error_pages = config.getErrorPages();
+	std::string error_message = error_pages[error_code];
+
+
 	std::cout << RED << "Error: " << error_code << std::endl;
-	std::string status_line = "HTTP/1.1 " + std::to_string(error_code) + " " + error_message + "\r\n";
-	std::string body = build_response_body("error_pages/" + std::to_string(error_code) + ".html");
+	std::string status_line = "HTTP/1.1 " + error_code + " " + error_message + "\r\n";
+	std::string body = build_response_body("error_pages/" + error_code + ".html");
 	std::string header = "Content-Type: text/html\r\n";
 	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
 	header += "Connection: close\r\n";
@@ -380,6 +390,13 @@ Server* Webserver::getServerBySocketFD(int server_socket_fd){
 	}
 	std::cout << RED << "Error: Server socket fd not found: " << server_socket_fd << std::endl;
 	return NULL;
+}
+
+std::shared_ptr<Client>& Webserver::getClientByClientFD(int client_fd){
+	int server_fd = this->client_server_map[client_fd];
+	Server* server = getServerBySocketFD(server_fd);
+	std::shared_ptr<Client>& client = server->getclient(client_fd);
+	return (client);
 }
 
 int Webserver::get_epoll_fd() const{
