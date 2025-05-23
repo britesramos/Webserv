@@ -49,48 +49,37 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 	}
 }
 
-// TODO: Create a method to fill location config from config file
-void Cgi::run_cgi(Server& server, Client& client)
+void Cgi::start_cgi(Location config)
 {
-	pid_t pid;
-	ServerConfig data;
-	std::unordered_map<std::string, Location> config;
-
-	data = server.getconfigData();
-	config = data.getLocations();
-
-	if(config.find("/cgi-bin") != config.end())
+	this->config_root = config.getRoot();
+	std::vector<std::string> config_allowed_methods = config.get_methods();
+	for (size_t i = 0; i < config_allowed_methods.size(); ++i)
 	{
-		this->config_root = config["/cgi-bin"].getRoot();
-		std::vector<std::string> config_allowed_methods = config["/cgi-bin"].get_methods();
-		for (size_t i = 0; i < config_allowed_methods.size(); ++i)
-		{
-			std::cout << "							this is the method " << config_allowed_methods[i] << std::endl;
-			if (config_allowed_methods[i] == "GET")
-				this->get = true;
-			if (config_allowed_methods[i] == "POST")
-				this->post = true;
-			if (config_allowed_methods[i] == "DELETE")
-				this->del = true;
-		}
-		bool config_autoindex = config["/cgi-bin"].getAutoindex();
-		if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
-		{
-			this->code_status = 403;
-			return ;
-		}
+		if (config_allowed_methods[i] == "GET")
+			this->get = true;
+		if (config_allowed_methods[i] == "POST")
+			this->post = true;
+		if (config_allowed_methods[i] == "DELETE")
+			this->del = true;
 	}
-	else {
-		this->code_status = 404;
-		return ;
-	}
-
+	// bool config_autoindex = config.getAutoindex();
+	// if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
+	// {
+	// 	this->code_status = 403;
+	// 	return ;
+	// }
 
 	if (pipe(cgi_in) == -1 || pipe(cgi_out) == -1)
 	{
 		perror("Pipe");
 		return ;
 	}
+}
+
+
+void Cgi::run_cgi(Client& client)
+{
+	pid_t pid;
 
 	pid = fork();
 	if (pid == -1)
@@ -130,9 +119,13 @@ void Cgi::run_cgi(Server& server, Client& client)
             std::cout << "CGI output: \n" << buffer; // to print in the terminal
         }
 		this->code_status = 200;
-        close(this->cgi_out[READ]);
+        // close(this->cgi_out[READ]);
 		int status;
 		waitpid(pid, &status, WNOHANG);
+		if (status == 1)
+		{
+			std::cout << "error running cgi!" << std::endl;
+		}
 	}
 
 }

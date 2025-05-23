@@ -130,21 +130,27 @@ int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	std::string response;
-	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos)
+	if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
 	{
 		std::cout << "CGI response" << std::endl;
-		cgi.run_cgi(*server, *client);
-		if (cgi.get_code_status() == 404) // this not work as I expected TODO: ask Sara
+		cgi.start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
+		if (addEpollFd(cgi.get_cgi_out(READ)) == 1)
 		{
-			handle_error(client_fd, 404, "Not Found");
+			std::cout << "not possible to add Cgi Fd to epoll" << std::endl;
+			return 1;
 		}
-		else if (cgi.get_code_status() == 403)
-		{
-			handle_error(client_fd, 403, "Forbidden");
-		}
+		cgi.run_cgi(*client);
+		// if (cgi.get_code_status() == 404) // this not work as I expected TODO: ask Sara
+		// {
+		// 	handle_error(client_fd, 404, "Not Found");
+		// }
+		// else if (cgi.get_code_status() == 403)
+		// {
+		// 	handle_error(client_fd, 403, "Forbidden");
+		// }
 
 	}
-	else if (client->get_Request("method") == "GET")
+	if (client->get_Request("method") == "GET")
 		handle_get_request(client_fd, client->get_Request("url_path"));
 	else if (client->get_Request("method") == "POST")
 		handle_post_request(client_fd, client->get_Request("url_path"));
