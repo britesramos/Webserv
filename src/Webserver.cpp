@@ -125,6 +125,7 @@ int Webserver::main_loop(){
 		return 0;
 }
 
+//TODO: Check if the method is allowed in the location.
 int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
@@ -247,39 +248,18 @@ std::string Webserver::build_response_body(const std::string& url_path){
 
 std::string Webserver::findRoot(int client_fd, const std::string& url_path){
 	std::string root;
-	//1) Find server by client fd:
-	Server* server = getServerBySocketFD(client_server_map.find(client_fd)->second);
-	if (server == NULL){
-		std::cerr << RED << "Error: Server not found for client fd: " << client_fd << std::endl;
-		return "";
-	}
-	//2) Get Locations from server:
-	std::unordered_map<std::string, Location> locations = server->getServerConfig().getLocations();
-	if (locations.empty()){
-		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
-		return "";
-	}
-	//3) Find location by url path (logenst prefix match):
-	std::string matched_prefix;
-	for (auto it = locations.begin(); it != locations.end(); ++it){
-		if (url_path.find(it->first) == 0){
-			if (it->first.size() > matched_prefix.size())
-				matched_prefix = it->first;
-		}
-	}
+	Location locations;
+	locations = getLocationByPath(client_fd, url_path);
 	//4) Get root from location:
-	if (!matched_prefix.empty()){
-		root = locations[matched_prefix].getRoot();
-		if (root.empty()){
-			std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
-			return "";
-		}
+	root = locations.getRoot();
+	if (root.empty()){
+		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
+		return "";
 	}
 	//5) If no location found, return default root:
 	else{
 		std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
 		root = "www/";
-	
 	}
 	//6) Return root:
 	return root;
@@ -412,5 +392,29 @@ void Webserver::printServerFDs() const {
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		std::cout << "Server " << i << " FD: " << _servers[i].getServerSocket() << std::endl;
 	}
+}
+
+Location Webserver::getLocationByPath(int client_fd, const std::string& url_path){
+	//1) Find server by client fd:
+	Server* server = getServerBySocketFD(client_server_map.find(client_fd)->second);
+	if (server == NULL){
+		std::cerr << RED << "Error: Server not found for client fd: " << client_fd << std::endl;
+		return Location();
+	}
+	//2) Get Locations from server:
+	std::unordered_map<std::string, Location> locations = server->getServerConfig().getLocations();
+	if (locations.empty()){
+		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
+		return Location();
+	}
+	//3) Find location by url path (logenst prefix match):
+	std::string matched_prefix;
+	for (auto it = locations.begin(); it != locations.end(); ++it){
+		if (url_path.find(it->first) == 0){
+			if (it->first.size() > matched_prefix.size())
+				matched_prefix = it->first;
+		}
+	}
+	return (locations[matched_prefix]);
 }
  

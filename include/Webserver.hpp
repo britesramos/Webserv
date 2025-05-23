@@ -51,6 +51,7 @@ class Webserver{
 		//Getters
 		const std::vector<Server>& get_servers() const;
 		Server* getServerBySocketFD(int server_socket_fd);
+		Location getLocationByPath(int client_fd, const std::string& url_path);
 
 		int get_epoll_fd() const;
 };
