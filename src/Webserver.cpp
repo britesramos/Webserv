@@ -426,4 +426,3 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	}
 	return (locations[matched_prefix]);
 }
- 

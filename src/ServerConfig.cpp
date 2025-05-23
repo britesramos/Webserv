@@ -6,7 +6,12 @@ ServerConfig::ServerConfig()
 	this->port = "8080";
 	this->server_name = "YarnServ";
 	this->max_client_size = 1000000;
-	// add default error_pages
+	this->error_pages["400"] = "/error_pages/400.html";
+	this->error_pages["403"] = "/error_pages/403.html";
+	this->error_pages["404"] = "/error_pages/404.html";
+	this->error_pages["413"] = "/error_pages/413.html";
+	this->error_pages["500"] = "/error_pages/500.html";
+	this->error_pages["502"] = "/error_pages/502.html";
 }
 
 ServerConfig::~ServerConfig()
@@ -35,7 +40,7 @@ void ServerConfig::setMaxClientSize(int input)
 	this->max_client_size = input;
 }
 
-void ServerConfig::setErrorPage(int error_number, std::string page)
+void ServerConfig::setErrorPage(std::string error_number, std::string page)
 {
 	this->error_pages[error_number] = page;
 }
@@ -67,7 +72,7 @@ int ServerConfig::getMaxClientSize() const
 	return(this->max_client_size);
 }
 
-std::string ServerConfig::getErrorPage(int code) const
+std::string ServerConfig::getErrorPage(std::string code) const
 {
 	auto temp = this->error_pages.find(code);
 	if (temp != this->error_pages.end()) // check if is not in the end of the map
@@ -88,7 +93,7 @@ void ServerConfig::print() const {
 	std::cout << "Max client size: " << max_client_size << "\n";
 
 	std::cout << "Error Pages:\n";
-	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+	for (std::map<std::string, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
 		std::cout << "  " << it->first << " -> " << it->second << "\n";
 	}
 

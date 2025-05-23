@@ -154,7 +154,6 @@ bool ConfigParser::config_file_parsing(std::string input)
 			else if (str.find('}') != std::string::npos)
 			{
 				close_curly_b++;
-				// std::cout << "					this is the path now: " << path << std::endl;
 				current_server.addLocation(path, current_location);
 				in_location_block = false;
 			}
@@ -308,7 +307,7 @@ bool ConfigParser::is_values_and_keys_set(std::string str, ServerConfig& current
 			std::cerr << "Not a valid, error page" << std::endl;
 			return false;
 		}
-		current_server.setErrorPage(std::stoi(key), value);
+		current_server.setErrorPage(key, value);
 	}
 	else
 	{

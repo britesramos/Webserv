@@ -14,7 +14,7 @@ class ServerConfig{
 		std::string server_name;
 		int max_client_size;
 		std::unordered_map <std::string, Location> location_blocks;
-		std::map<int, std::string> error_pages;
+		std::map<std::string, std::string> error_pages;
 
 	public:
 		ServerConfig();
@@ -25,7 +25,7 @@ class ServerConfig{
 		void setPort(std::string input);
 		void setServerName(std::string input);
 		void setMaxClientSize(int input);
-		void setErrorPage(int error_number, std::string page);
+		void setErrorPage(std::string error_number, std::string page);
 		void addLocation(std::string path, Location& location);
 
 	// Getters
@@ -33,9 +33,10 @@ class ServerConfig{
 		std::string getPort() const;
 		std::string getServerName() const;
 		int getMaxClientSize() const;
-		std::string getErrorPage(int code) const;
+		std::string getErrorPage(std::string code) const;
 		const std::unordered_map<std::string, Location>& getLocations() const;
 
 		void print() const;
 };
+
 #endif
