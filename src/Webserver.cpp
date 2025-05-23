@@ -128,12 +128,21 @@ int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	std::string response;
-	// if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos) //Passar isto para dentro de cada method.
-	// {
-	// 	std::cout << "CGI response" << std::endl;
-	// 	cgi.run_cgi(*client);
-	// }
-	if (client->get_Request("method") == "GET")
+	if (client->get_Request("url_path").find("/cgi-bin/") != std::string::npos)
+	{
+		std::cout << "CGI response" << std::endl;
+		cgi.run_cgi(*server, *client);
+		if (cgi.get_code_status() == 404) // this not work as I expected TODO: ask Sara
+		{
+			handle_error(client_fd, 404, "Not Found");
+		}
+		else if (cgi.get_code_status() == 403)
+		{
+			handle_error(client_fd, 403, "Forbidden");
+		}
+
+	}
+	else if (client->get_Request("method") == "GET")
 		handle_get_request(client_fd, client->get_Request("url_path"));
 	else if (client->get_Request("method") == "POST")
 		handle_post_request(client_fd, client->get_Request("url_path"));
@@ -434,4 +443,3 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	}
 	return (locations[matched_prefix]);
 }
- 

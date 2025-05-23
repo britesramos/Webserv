@@ -92,6 +92,10 @@ int::Server::getServerSocket() const{
 	return this->_Server_socket;
 }
 
+ServerConfig Server::getconfigData() const{
+	return (this->_config_data);
+}
+
 //Utils
 
 void Server::printClientRequests() const{

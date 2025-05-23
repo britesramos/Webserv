@@ -32,6 +32,7 @@ class Server{
 		ServerConfig getServerConfig() const;
 		std::shared_ptr<Client>& getclient(int client_fd);
 		const std::unordered_map<int, std::shared_ptr<Client>>& getClients() const;
+		ServerConfig getconfigData() const;
 		
 		//Utils
 		void printClientRequests() const;

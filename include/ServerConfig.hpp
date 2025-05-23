@@ -25,7 +25,7 @@ class ServerConfig{
 		void setPort(std::string input);
 		void setServerName(std::string input);
 		void setMaxClientSize(int input);
-		void setErrorPage(int error_number, std::string page);
+		void setErrorPage(std::string error_number, std::string page);
 		void addLocation(std::string path, Location& location);
 
 	// Getters
@@ -39,4 +39,5 @@ class ServerConfig{
 
 		void print() const;
 };
+
 #endif
