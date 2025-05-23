@@ -268,11 +268,11 @@ int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	std::cout << "GET request for: " << url_path << std::endl;
 	std::string status_line = "HTTP/1.1 200 OK\r\n";
 	std::string body;
-	std::string root = findRoot(client_fd, url_path);
+	// std::string root = findRoot(client_fd, url_path);
 	if (url_path == "/")
-		body = build_response_body(root + url_path + ".html");
+		body = build_response_body("www/html" + url_path + ".html");
 	else
-		body = build_response_body(root + url_path);
+		body = build_response_body("www/html" + url_path);
 	// std::cout << "Body: " << body << std::endl; //temporary, should be removed
 	std::string response = status_line;
 	response += "Content-Type: text/html\r\n";
