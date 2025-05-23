@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Success</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f9fafb;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; /* Prevents scrollbars during animation */
+    }
+
+    .container {
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      z-index: 10; /* Ensures content is above confetti */
+    }
+
+    .error-code {
+      font-size: 8rem;
+      font-weight: bold;
+      color: #a05270;;
+    }
+
+    .message {
+      font-size: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .description {
+      color: #6b7280;
+      margin-top: 0.5rem;
+    }
+
+    a.home-link {
+      display: inline-block;
+      margin-top: 2rem;
+      text-decoration: none;
+      background-color: #a05270;;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      transition: background-color 0.3s;
+    }
+
+    a.home-link:hover {
+      background-color: #a05270;;
+    }
+    
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+  
+  <div class="container">
+    <div class="error-code">Success</div>
+    <div class="message">Form Uploaded with success!</div>
+    <a href="/" class="home-link">Go Back Home</a>
+  </div>
+
+  <!-- Confetti JS -->
+  <script>
+    // Confetti animation
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Confetti particles array
+    const confetti = [];
+    const confettiCount = 200;
+    const gravity = 0.5;
+    const terminalVelocity = 5;
+    const drag = 0.075;
+    const colors = [
+      { front: '#2563eb', back: '#1e40af' }, // Blue
+      { front: '#10b981', back: '#059669' }, // Green
+      { front: '#f59e0b', back: '#d97706' }, // Yellow
+      { front: '#ef4444', back: '#dc2626' }, // Red
+      { front: '#8b5cf6', back: '#7c3aed' }  // Purple
+    ];
+    
+    // Confetti particle
+    class Confetti {
+      constructor(context) {
+        this.context = context;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.dimensions = {
+          x: Math.random() * 10 + 5,
+          y: Math.random() * 10 + 5
+        };
+        
+        // Start from bottom of the screen
+        this.position = {
+          x: Math.random() * canvas.width,
+          y: canvas.height + this.dimensions.y
+        };
+        
+        this.rotation = Math.random() * 2 * Math.PI;
+        this.scale = {
+          x: 1,
+          y: 1
+        };
+        
+        // Initial upward velocity (shooting up)
+        this.velocity = {
+          x: Math.random() * 10 - 5,
+          y: Math.random() * -15 - 10 // Negative for upward movement
+        };
+        
+        this.flipSpeed = Math.random() * 0.2 + 0.05;
+        
+        // Add some randomness to make particles more scattered
+        this.tilt = Math.random() * 10 - 5;
+        this.tiltAngleIncrement = Math.random() * 0.1 + 0.05;
+        this.tiltAngle = 0;
+        
+        // Random colors
+        this.randomColors = [
+          Math.floor(Math.random() * 255),
+          Math.floor(Math.random() * 255),
+          Math.floor(Math.random() * 255)
+        ];
+        
+        // Lifecycle
+        this.createdAt = Date.now();
+        this.lifespan = 4000 + Math.random() * 3000; // 4-7 seconds lifespan
+      }
+      
+      update() {
+        // Apply gravity
+        this.velocity.y += gravity;
+        
+        // Apply drag
+        this.velocity.x *= (1 - drag);
+        
+        // Update position
+        this.position.x += this.velocity.x;
+        this.position.y += this.velocity.y;
+        
+        // Rotation and flipping
+        this.rotation += this.flipSpeed;
+        this.scale.y = Math.sin(this.rotation) > 0 ? 1 : -1;
+        
+        // Apply tilt
+        this.tiltAngle += this.tiltAngleIncrement;
+        this.tilt = Math.sin(this.tiltAngle) * 15;
+        
+        // Bounce off sides
+        if (this.position.x > canvas.width || this.position.x < 0) {
+          this.velocity.x = -this.velocity.x * 0.5;
+        }
+        
+        // Check if particle is too old
+        const age = Date.now() - this.createdAt;
+        if (age > this.lifespan && this.position.y > canvas.height) {
+          // Reset particle for continuous effect (optional)
+          this.position.x = Math.random() * canvas.width;
+          this.position.y = canvas.height + this.dimensions.y;
+          this.velocity.y = Math.random() * -15 - 10;
+          this.createdAt = Date.now();
+        }
+      }
+      
+      draw() {
+        this.context.save();
+        this.context.translate(this.position.x, this.position.y);
+        this.context.rotate(this.rotation + this.tilt * Math.PI / 180);
+        this.context.scale(this.scale.x, this.scale.y);
+        
+        // Use either predefined colors or random colors
+        this.context.fillStyle = this.scale.y > 0 ? this.color.front : this.color.back;
+        this.context.fillRect(-this.dimensions.x / 2, -this.dimensions.y / 2, this.dimensions.x, this.dimensions.y);
+        
+        this.context.restore();
+      }
+    }
+    
+    // Initialize confetti with a burst effect
+    function initConfetti() {
+      for (let i = 0; i < confettiCount; i++) {
+        // Stagger the launch of confetti
+        setTimeout(() => {
+          confetti.push(new Confetti(ctx));
+        }, i * 20); // Launch particles with a slight delay between them
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = 0; i < confetti.length; i++) {
+        confetti[i].update();
+        confetti[i].draw();
+      }
+      
+      // Continue animation
+      requestAnimationFrame(animate);
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Start animation
+    initConfetti();
+    animate();
+  </script>
+</body>
+</html>

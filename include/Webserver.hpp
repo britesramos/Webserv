@@ -37,11 +37,13 @@ class Webserver{
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
 		int handle_get_request(int client_fd, const std::string& url_path);
-		// int handle_post_request(int client_fd, const std::string& url_path);
+		int handle_post_request(int client_fd, const std::string& url_path);
 		// int handle_delete_request(int client_fd, const std::string& url_path);
+		void handle_success(int client_fd);
 		int handle_error(int client_fd, int error_code, std::string error_message);
 		std::string build_response_body(const std::string& url_path);
 		std::string findRoot(int client_fd, const std::string& url_path);
+		std::string build_header(std::string body);
 
 		//Debug methods
 		void printServerFDs() const;
