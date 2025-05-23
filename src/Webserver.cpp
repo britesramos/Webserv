@@ -100,7 +100,10 @@ int Webserver::main_loop(){
 				//If the socket fd is a client socket fd, there is a request to read and a response to send:
 				else {
 					std::cout << "Processing client fd: " << events[i].data.fd << std::endl; //Temporary, should be removed
-					process_request(events[i].data.fd);
+					if (process_request(events[i].data.fd) == -1){
+						std::cout << "HOLLA MUCHACHOS!" << std::endl;
+						break ;
+					}
 
 					//Print client requests for all servers (TO BE DELETED OR COMMENTED OUT):
 					// std::cout << "\n\n================= !!! CLIENT REQUESTS !!! =================" << std::endl;
@@ -122,6 +125,7 @@ int Webserver::main_loop(){
 		return 0;
 }
 
+//TODO: Check if the method is allowed in the location.
 int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
@@ -142,8 +146,8 @@ int Webserver::send_response(int client_fd){
 	}
 	else if (client->get_Request("method") == "GET")
 		handle_get_request(client_fd, client->get_Request("url_path"));
-	// if (client->get_Request("method") == "POST")
-	// 	handle_post_request(client_fd, client->get_Request("url_path"));
+	else if (client->get_Request("method") == "POST")
+		handle_post_request(client_fd, client->get_Request("url_path"));
 	// if (client->get_Request("method") == "DELETE")
 	// 	handle_delete_request(client_fd, client->get_Request("url_path"));
 	else
@@ -158,7 +162,7 @@ bool Webserver::is_server_fd(int fd){
 			return true;
 		}
 	}
-	std::cout << RED << "Error: Socket fd is not a server socket fd: " << fd << std::endl;
+	std::cout << RED << "Socket fd is not a server socket fd: " << fd << std::endl;
 	return false;
 }
 
@@ -180,8 +184,7 @@ int Webserver::process_request(int client_fd){
 		//Remove client from clients map:
 		for (size_t i = 0; i < this->_servers.size(); ++i){
 			if (this->_servers[i].removeClient(client_fd) == 0){
-				std::cout << GREEN << "Client removed from clients map: " << client_fd << std::endl;
-				break;
+				return -1;
 			}
 		}
 		return 1;
@@ -232,22 +235,50 @@ int Webserver::accept_connection(Server& server){
 std::string Webserver::build_response_body(const std::string& url_path){
 	std::cout << "Building response body for: " << url_path << std::endl;
 	std::ifstream html_file(url_path);
+	std::ostringstream body_stream;
 	if (!html_file.is_open()){
 		std::cerr << RED << "Error: Could not open file: " << url_path << std::endl;
-		return "<html><body><h1>404 Not Found</h1></body></html>"; //TEMP
+		std::string error_page = "error_pages/404.html";
+		std::ifstream html_error_404(error_page);
+		if (!html_error_404.is_open()){
+			std::cerr << RED << "Error: Could not open error page: " << error_page << std::endl;
+			return "<html><body><h1>404 Not Found</h1></body></html>";
+		}
+		body_stream << html_error_404.rdbuf();
+		std::string body = body_stream.str();
+		html_error_404.close();
+		return body;
 	}
-	std::ostringstream body_stream;
 	body_stream << html_file.rdbuf();
 	std::string body = body_stream.str();
 	html_file.close();
 	return body;
 }
 
+std::string Webserver::findRoot(int client_fd, const std::string& url_path){
+	std::string root;
+	Location locations;
+	locations = getLocationByPath(client_fd, url_path);
+	//4) Get root from location:
+	root = locations.getRoot();
+	if (root.empty()){
+		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
+		return "";
+	}
+	//5) If no location found, return default root:
+	else{
+		std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
+		root = "www/";
+	}
+	//6) Return root:
+	return root;
+}
+
 int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	std::cout << "GET request for: " << url_path << std::endl;
 	std::string status_line = "HTTP/1.1 200 OK\r\n";
 	std::string body;
-	// std::string root = getServerBySocketFD(client_server_map.find(client_fd))->_config_data.getLocations();
+	// std::string root = findRoot(client_fd, url_path);
 	if (url_path == "/")
 		body = build_response_body("www/html" + url_path + ".html");
 	else
@@ -258,8 +289,8 @@ int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
 	response += "Connection: close\r\n";
 	response += "\r\n";
-	response += body;
 	std::cout << "Response: " << response << std::endl; //temporary, should be removed
+	response += body;
 	//Send response to client:
 	int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
 	if (bytes_sent < 0){
@@ -277,15 +308,60 @@ int Webserver::handle_get_request(int client_fd, const std::string& url_path){
 	return 0;
 }
 
+//TODO: Store information somewhere.
+int Webserver::handle_post_request(int client_fd, const std::string& url_path){
+	(void)url_path;
+	handle_success(client_fd);
+	return 0;
+}
+
+//TODO: Use this to build the responses.
+std::string Webserver::build_header(std::string body){
+	std::string header = "Content-Type: text/html\r\n";
+	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+	header += "Connection: close\r\n";
+	header += "\r\n";
+	return (header);
+}
+
+//TODO: Clean up send and building header (use previous method)
+void Webserver::handle_success(int client_fd){
+	Server* server = getServerBySocketFD(client_server_map[client_fd]);
+	std::shared_ptr<Client> client = server->getclient(client_fd);
+	std::unordered_map<std::string, std::string> clientRequest = client->get_RequestMap();
+	std::string status_line = clientRequest["http_version"] + " 200 " + "OK" + "\r\n";
+	std::string body = build_response_body("www/html/Success.html");
+	std::string header = "Content-Type: text/html\r\n";
+	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+	header += "Connection: close\r\n";
+	header += "\r\n";
+	std::string response = status_line;
+	response += header;
+	response += body;
+	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	//Send response to client:
+	int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
+	if (bytes_sent < 0){
+		std::cerr << RED << "Error sending response to client: " << client_fd << std::endl;
+		return;
+	}
+	std::cout << GREEN << "Response sent to client: " << client_fd << std::endl;
+	//Close connection:
+	epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+	this->client_server_map.erase(client_fd);
+}
+
+//TODO: Clean up send and building header (use previous method)
 int Webserver::handle_error(int client_fd, int error_code, std::string error_message){
 	std::cout << RED << "Error: " << error_code << std::endl;
 	std::string status_line = "HTTP/1.1 " + std::to_string(error_code) + " " + error_message + "\r\n";
 	std::string body = build_response_body("error_pages/" + std::to_string(error_code) + ".html");
+	std::string header = "Content-Type: text/html\r\n";
+	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+	header += "Connection: close\r\n";
+	header += "\r\n";
 	std::string response = status_line;
-	response += "Content-Type: text/html\r\n";
-	response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
-	response += "Connection: close\r\n";
-	response += "\r\n";
+	response += header;
 	response += body;
 	std::cout << "Response: " << response << std::endl; //temporary, should be removed
 	//Send response to client:
@@ -326,3 +402,28 @@ void Webserver::printServerFDs() const {
 		std::cout << "Server " << i << " FD: " << _servers[i].getServerSocket() << std::endl;
 	}
 }
+
+Location Webserver::getLocationByPath(int client_fd, const std::string& url_path){
+	//1) Find server by client fd:
+	Server* server = getServerBySocketFD(client_server_map.find(client_fd)->second);
+	if (server == NULL){
+		std::cerr << RED << "Error: Server not found for client fd: " << client_fd << std::endl;
+		return Location();
+	}
+	//2) Get Locations from server:
+	std::unordered_map<std::string, Location> locations = server->getServerConfig().getLocations();
+	if (locations.empty()){
+		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
+		return Location();
+	}
+	//3) Find location by url path (logenst prefix match):
+	std::string matched_prefix;
+	for (auto it = locations.begin(); it != locations.end(); ++it){
+		if (url_path.find(it->first) == 0){
+			if (it->first.size() > matched_prefix.size())
+				matched_prefix = it->first;
+		}
+	}
+	return (locations[matched_prefix]);
+}
+ 

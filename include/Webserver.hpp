@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sys/epoll.h>
 #include "../include/Cgi.hpp"
+#include "../include/Location.hpp"
 
 class Webserver{
 	private:
@@ -36,10 +37,13 @@ class Webserver{
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
 		int handle_get_request(int client_fd, const std::string& url_path);
-		// int handle_post_request(int client_fd, const std::string& url_path);
+		int handle_post_request(int client_fd, const std::string& url_path);
 		// int handle_delete_request(int client_fd, const std::string& url_path);
+		void handle_success(int client_fd);
 		int handle_error(int client_fd, int error_code, std::string error_message);
 		std::string build_response_body(const std::string& url_path);
+		std::string findRoot(int client_fd, const std::string& url_path);
+		std::string build_header(std::string body);
 
 		//Debug methods
 		void printServerFDs() const;
@@ -47,6 +51,7 @@ class Webserver{
 		//Getters
 		const std::vector<Server>& get_servers() const;
 		Server* getServerBySocketFD(int server_socket_fd);
+		Location getLocationByPath(int client_fd, const std::string& url_path);
 
 		int get_epoll_fd() const;
 };
