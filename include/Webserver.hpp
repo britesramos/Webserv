@@ -36,12 +36,14 @@ class Webserver{
 
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
-		int handle_get_request(int client_fd, const std::string& url_path);
-		int handle_post_request(int client_fd, const std::string& url_path);
+		int handle_get_request(std::shared_ptr<Client>& client, const std::string& url_path);
+		bool is_method_allowed(std::shared_ptr<Client>& client, const std::string& url_path, std::string method);
+		int handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path);
 		// int handle_delete_request(int client_fd, const std::string& url_path);
 		void handle_success(int client_fd);
-		int handle_error(int client_fd);
-		std::string build_response_body(const std::string& url_path);
+		int handle_error(std::shared_ptr<Client>& client);
+		std::string build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message);
+		std::string build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag);
 		std::string findRoot(int client_fd, const std::string& url_path);
 		std::string build_header(std::string body);
 
@@ -51,6 +53,7 @@ class Webserver{
 		//Getters
 		const std::vector<Server>& get_servers() const;
 		std::shared_ptr<Client>& getClientByClientFD(int client_fd);
+		Server* getServerByClientFD(int client_fd);
 		Server* getServerBySocketFD(int server_socket_fd);
 		Location getLocationByPath(int client_fd, const std::string& url_path);
 
