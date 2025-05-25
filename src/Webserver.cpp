@@ -203,7 +203,7 @@ int Webserver::accept_connection(Server& server){
 	struct sockaddr_in new_connection_address;
 	socklen_t new_connection_address_len = sizeof(new_connection_address);
 	new_connection_socket_fd = accept(server.getServerSocket(), (struct sockaddr*)&new_connection_address, &new_connection_address_len);
-	// std::cout << GREEN << "New connection accepted: " << new_connection_socket_fd << std::endl;
+	std::cout << GREEN << "New connection accepted: " << new_connection_socket_fd << std::endl;
 	if (new_connection_socket_fd < 0)
 	{
 		std::cerr << RED << "Error accepting connection" << std::endl;
@@ -232,30 +232,25 @@ int Webserver::accept_connection(Server& server){
 //Handling Responses
 std::string Webserver::build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag){
 	std::cout << "Building response body for: " << url_path << std::endl;
+	//1)Find file to build body with:
 	std::string root;
 	if (flag == 1)
 		root = url_path;
 	else{
 		if (url_path == "/")
 			root = "www/html/.html";
-		else
+		else{
 			root = findRoot(client->get_Client_socket(), url_path);
+			root += url_path;
+		}
 	}
 	std::cout << "ROOOOOT : " << root << std::endl;
+	//2)Opening file and converting into a string to be send back at the client:
 	std::ifstream html_file(root);
 	std::ostringstream body_stream;
 	if (!html_file.is_open()){
-		// std::cerr << RED << "Error: Could not open file: " << url_path << std::endl;
-		// std::string error_page = "error_pages/404.html";
-		// std::ifstream html_error_404(error_page);
-		// if (!html_error_404.is_open()){
-		// 	std::cerr << RED << "Error: Could not open error page: " << error_page << std::endl;
-		// 	return "<html><body><h1>404 Not Found</h1></body></html>";
-		// }
-		// body_stream << html_error_404.rdbuf();
 		client->set_error_code("404");
 		std::string body = body_stream.str();
-		// html_error_404.close();
 		return body;
 	}
 	body_stream << html_file.rdbuf();
@@ -264,7 +259,6 @@ std::string Webserver::build_body(std::shared_ptr<Client>& client, const std::st
 	return body;
 }
 
-//TODO: Use this to build the responses.
 //TODO: Make sure that the headers look allways like this. If there are other things depending on the request????
 std::string Webserver::build_header(std::string body){
 	std::string header = "Content-Type: text/html\r\n";
@@ -278,16 +272,17 @@ std::string Webserver::findRoot(int client_fd, const std::string& url_path){
 	std::string root;
 	Location locations;
 	locations = getLocationByPath(client_fd, url_path);
-	//1) Get root from location:
+	//TODO: Find a way to check if in there is a location that matches that url_path.
+	//1) If no location found, return default root:
+	// else{
+	// 	std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
+	// 	root = "www/";
+	// }
+	//2) Get root from location:
 	root = locations.getRoot();
 	if (root.empty()){
 		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
-		return "";
-	}
-	//2) If no location found, return default root:
-	else{
-		std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
-		root = "www/";
+		return "www/";
 	}
 	//3) Return root:
 	return root;
@@ -296,7 +291,7 @@ std::string Webserver::findRoot(int client_fd, const std::string& url_path){
 std::string Webserver::build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message){
 	std::unordered_map<std::string, std::string> requestMap = client->get_RequestMap();
 	std::string http_version = requestMap["http_version"];
-	std::string status_line = http_version + " " + status_code + " " + status_message;
+	std::string status_line = http_version + " " + status_code + " " + status_message + "\r\n";
 	return (status_line);
 }
 
@@ -304,7 +299,7 @@ int Webserver::handle_get_request(std::shared_ptr<Client>& client, const std::st
 	if (is_method_allowed(client, url_path, "GET") == true){
 		//1)Build response:
 		std::cout << "GET request for: " << url_path << std::endl;
-		std::string body = build_body(client, url_path, 0); //TODO: Check if it works the same for images and htmls.
+		std::string body = build_body(client, url_path, 0);
 		if (body.empty())
 			return 1;
 		std::string header = build_header(body);
@@ -467,10 +462,11 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
 		return Location();
 	}
+	//TODO: I think this is only matching the entire url. not also first section.
 	//3) Find location by url path (logenst prefix match):
 	std::string matched_prefix;
 	for (auto it = locations.begin(); it != locations.end(); ++it){
-		if (url_path.find(it->first) == 0){
+		if (url_path.rfind(it->first, 0) == 0){
 			if (it->first.size() > matched_prefix.size())
 				matched_prefix = it->first;
 		}
