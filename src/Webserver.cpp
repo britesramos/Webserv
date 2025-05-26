@@ -91,7 +91,7 @@ int Webserver::main_loop(){
 		//PROCESSING EVENTS:
 		for (int i = 0; i < epoll_num_ready_events; ++i)
 		{
-			std::cout << "Event fd: " << events[i].data.fd << std::endl; //Temporary, should be removed
+			std::cout << "Event fd: " << events[i].data.fd << std::endl;
 				//If the socket fd is the server socket fd there is a new connection:
 				if (is_server_fd(events[i].data.fd) == true){
 					if (accept_connection(this->_servers[i]) == 1)
@@ -99,7 +99,7 @@ int Webserver::main_loop(){
 				}
 				//If the socket fd is a client socket fd, there is a request to read and a response to send:
 				else {
-					std::cout << "Processing client fd: " << events[i].data.fd << std::endl; //Temporary, should be removed
+					std::cout << "Processing client fd: " << events[i].data.fd << std::endl;
 					if (process_request(events[i].data.fd) == -1)
 						break ;
 
@@ -111,12 +111,10 @@ int Webserver::main_loop(){
 					// }
 
 
-					if (send_response(events[i].data.fd) == 1)
+					if (send_response(events[i].data.fd) == 1) //TODO: Change to build response functions.
 						return 1;
-					// 	//Clean up:
-					// 		//Close connection:
-					// 		//Remove client from epoll:
-					// 		//Remove client from clients map:
+
+					//TODO: Send reponse method based on a response map.
 				}
 			}
 		}
@@ -143,13 +141,13 @@ int Webserver::send_response(int client_fd){
 	// }
 	if (client->get_Request("method") == "GET")
 		handle_get_request(client, client->get_Request("url_path"));
-	// else if (client->get_Request("method") == "POST")
-	// 	handle_post_request(client, client->get_Request("url_path"));
+	else if (client->get_Request("method") == "POST")
+		handle_post_request(client, client->get_Request("url_path"));
 	//else if (client->get_Request("method") == "DELETE")
 	// 	handle_delete_request(client_fd, client->get_Request("url_path"));
-	// TODO:
 	if (client->get_error_code() != "200")
 		handle_error(client);
+	close_connection(client);
 	return 0;
 }
 
@@ -244,7 +242,7 @@ std::string Webserver::build_body(std::shared_ptr<Client>& client, const std::st
 			root += url_path;
 		}
 	}
-	std::cout << "ROOOOOT : " << root << std::endl;
+	std::cout << "Root in build_body after findRoot : " << root << std::endl;
 	//2)Opening file and converting into a string to be send back at the client:
 	std::ifstream html_file(root);
 	std::ostringstream body_stream;
@@ -316,15 +314,20 @@ int Webserver::handle_get_request(std::shared_ptr<Client>& client, const std::st
 			return 1;
 		}
 		std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
-		//3)Close connection: //TODO: MAKE THIS IS ITS OWN METHOD. (TO BE USED MULTUPLE TIMES!!!!)
-		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client->get_Client_socket(), NULL)< 0)
-			std::cerr << RED << "Error removing client fd from epoll interest list: " << client->get_Client_socket() << " - " << strerror(errno) << std::endl;
-		else
-			std::cout << GREEN << "Successfully removed client fd from epoll interest list: " << client->get_Client_socket() << std::endl;
-		this->getServerBySocketFD(this->client_server_map.find(client->get_Client_socket())->second)->removeClient(client->get_Client_socket());
-		this->client_server_map.erase(client->get_Client_socket());
 	}
 	return 0;
+}
+
+void Webserver::close_connection(std::shared_ptr<Client>& client){
+	//1)Remove from epoll interest list:
+	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client->get_Client_socket(), NULL)< 0)
+		std::cerr << RED << "Error removing client fd from epoll interest list: " << client->get_Client_socket() << " - " << strerror(errno) << std::endl;
+	else
+		std::cout << GREEN << "Successfully removed client fd from epoll interest list: " << client->get_Client_socket() << std::endl;
+	//2)Remove from client_server_map:
+	this->getServerBySocketFD(this->client_server_map.find(client->get_Client_socket())->second)->removeClient(client->get_Client_socket());
+	this->client_server_map.erase(client->get_Client_socket());
+
 }
 
 //TODO: Test if it works as expected.
@@ -332,52 +335,58 @@ bool Webserver::is_method_allowed(std::shared_ptr<Client>& client, const std::st
 	Location location = getLocationByPath(client->get_Client_socket(), url_path);
 	std::vector<std::string> allowed_methods = location.get_methods();
 	for (size_t i = 0; i < allowed_methods.size(); ++i){
+		// std::cout << "method: " << allowed_methods[i] << std::endl; //TEMP
 		if (allowed_methods[i] == method)
 			return true;
 	}
+	std::cout << "METHOD NOT ALLOWED!" << std::endl; //What happens in this case? The website doesnt change?
+	client->set_error_code("405");
 	return false;
 }
 
 //TODO: Store information somewhere. HOW TO HANDLE POST REQUESTS????
 int Webserver::handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path){
-	if (is_method_allowed(client, url_path, "GET") == true){
+	if (is_method_allowed(client, url_path, "POST") == true){
+		std::unordered_map<std::string, std::string> Request_Map = client->get_RequestMap();
+		if (Request_Map["Content-Type"] == "application/x-www-form-urlencoded")
+			handle_post_form_request(client, url_path);
 		(void)url_path;
-		//
+
+		//1)Inspect content-type
+		//2)Deal with request apropriatelly
+		//3)Send response back
 	}
-	// handle_success(client); //TO BE FIXED.
+	handle_success(client);
 	return 0;
+}
+
+int Webserver::handle_post_form_request(std::shared_ptr<Client>& client, const std::string& url_path){
+	std::string body = client->get_Request("body");
+	//1)Decode URL and Parse form data into an unordered_map:
+	std::unordered_map<std::string, std::string> decoded_url = decode_url(body); //TODO
+	//2)Store data in the correct path:
+
 }
 
 
 //TODO: Clean up send and building header (use previous method)
-// void Webserver::handle_success(int client_fd){
-// 	Server* server = getServerBySocketFD(client_server_map[client_fd]);
-// 	std::shared_ptr<Client> client = server->getclient(client_fd);
-// 	std::unordered_map<std::string, std::string> clientRequest = client->get_RequestMap();
-// 	std::string status_line = clientRequest["http_version"] + " 200 " + "OK" + "\r\n";
-// 	std::string body = build_body(client, "www/html/Success.html");
-// 	std::string header = "Content-Type: text/html\r\n";
-// 	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
-// 	header += "Connection: close\r\n";
-// 	header += "\r\n";
-// 	std::string response = status_line;
-// 	response += header;
-// 	response += body;
-// 	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
-// 	//Send response to client:
-// 	int bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
-// 	if (bytes_sent < 0){
-// 		std::cerr << RED << "Error sending response to client: " << client_fd << std::endl;
-// 		return;
-// 	}
-// 	std::cout << GREEN << "Response sent to client: " << client_fd << std::endl;
-// 	//Close connection:
-// 	epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-// 	this->client_server_map.erase(client_fd);
-// }
+void Webserver::handle_success(std::shared_ptr<Client>& client){
+	//1)Build response:
+	std::unordered_map<std::string, std::string> clientRequest = client->get_RequestMap();
+	std::string status_line = clientRequest["http_version"] + " 200 " + "OK" + "\r\n";
+	std::string body = build_body(client, "/Success.html", 0);
+	std::string header = build_header(body);
+	std::string response = status_line + header;
+	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	response += body;
+	//2)Send response to client:
+	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
+	if (bytes_sent < 0)
+		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
+	else
+		std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
+}
 
-//TODO: Clean up send and building header (use previous method)
-//TODO: If it doesnt exist. It should fall back in the same error.
 int Webserver::handle_error(std::shared_ptr<Client>& client){
 	//1) Get error_code:
 	std::string error_code = client->get_error_code();
@@ -389,15 +398,15 @@ int Webserver::handle_error(std::shared_ptr<Client>& client){
 	std::map<std::string, std::string> error_pages = config.getErrorPages();
 	std::string error_message = error_pages[error_code];
 
-
+	//3) Build response to send to client:
 	std::cout << RED << "Error: " << error_code << std::endl;
-	std::string status_line = build_status_line(client, error_code, error_message); //TO BE DELETED: //"HTTP/1.1 " + error_code + " " + error_message + "\r\n";
+	std::string status_line = build_status_line(client, error_code, error_message);
 	std::string body = build_body(client, "error_pages/" + error_code + ".html", 1);
 	std::string header = build_header(body);
 	std::string response = status_line + header;
 	std::cout << "Response: " << response << std::endl; //temporary, should be removed
 	response += body;
-	//Send response to client:
+	//3) Send response to client:
 	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
 	if (bytes_sent < 0){
 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
@@ -405,9 +414,6 @@ int Webserver::handle_error(std::shared_ptr<Client>& client){
 		return 1;
 	}
 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
-	//Close connection:
-	epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client->get_Client_socket(), NULL);
-	this->client_server_map.erase(client->get_Client_socket());
 	return 0;
 }
 

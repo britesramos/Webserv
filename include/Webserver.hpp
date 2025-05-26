@@ -14,6 +14,7 @@ class Webserver{
 		int _epoll_event_count;
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
+		// std::unordered_map<int, std::string> client_response_map; //or in each client. This way we dont need to cleand this map as well.
 		Cgi cgi;
 
 	public:
@@ -40,12 +41,15 @@ class Webserver{
 		bool is_method_allowed(std::shared_ptr<Client>& client, const std::string& url_path, std::string method);
 		int handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path);
 		// int handle_delete_request(int client_fd, const std::string& url_path);
-		void handle_success(int client_fd);
+		void handle_success(std::shared_ptr<Client>& client);
 		int handle_error(std::shared_ptr<Client>& client);
 		std::string build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message);
 		std::string build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag);
 		std::string findRoot(int client_fd, const std::string& url_path);
 		std::string build_header(std::string body);
+		void close_connection(std::shared_ptr<Client>& client);
+		//Handle Post Request Method
+		int handle_post_form_request(std::shared_ptr<Client>& client, const std::string& url_path);
 
 		//Debug methods
 		void printServerFDs() const;
