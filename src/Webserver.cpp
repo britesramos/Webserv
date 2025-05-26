@@ -146,7 +146,7 @@ int Webserver::send_response(int client_fd){
 		// 	handle_error(client_fd, 403, "Forbidden");
 		// }
 
-	// }
+	}
 	if (client->get_Request("method") == "GET")
 		handle_get_request(client, client->get_Request("url_path"));
 	// else if (client->get_Request("method") == "POST")
@@ -479,3 +479,4 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	}
 	return (locations[matched_prefix]);
 }
+

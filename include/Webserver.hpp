@@ -15,6 +15,7 @@ class Webserver{
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
 		Cgi cgi;
+		//timer.
 
 	public:
 		Webserver();
