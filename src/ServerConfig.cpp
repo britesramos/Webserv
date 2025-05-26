@@ -81,6 +81,10 @@ std::string ServerConfig::getErrorPage(std::string code) const
 		return ("");
 }
 
+std::map<std::string, std::string> ServerConfig::getErrorPages() const{
+	return (error_pages);
+}
+
 const std::unordered_map<std::string, Location>& ServerConfig::getLocations() const
 {
 	return (this->location_blocks);

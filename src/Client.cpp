@@ -1,6 +1,7 @@
 #include "../include/Client.hpp"
 
 Client::Client(int socket_fd):_Client_socket(socket_fd){
+	this->_error_code = "200";
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
 
@@ -12,6 +13,7 @@ Client::~Client(){
 
 Client::Client(const Client& other){
 	this->_Client_socket = other._Client_socket;
+	this->_error_code = other._error_code;
 	this->_Client_RequestMap = other._Client_RequestMap;
 	this->_Client_ResponseMap = other._Client_ResponseMap;
 }
@@ -20,6 +22,7 @@ Client& Client::operator=(const Client& other){
 	if (this != &other)
 	{
 		this->_Client_socket = other._Client_socket;
+		this->_error_code = other._error_code;
 		this->_Client_RequestMap = other._Client_RequestMap;
 		this->_Client_ResponseMap = other._Client_ResponseMap;
 	}
@@ -146,6 +149,10 @@ std::string Client::get_Request(std::string key){
 std::string Client::get_Response(std::string key){
 	return (this->_Client_ResponseMap.at(key));
 }
+std::string Client::get_error_code(){
+	return (this->_error_code);
+}
+
 
 //***Setters***//
 void Client::set_Client_socket(int socket_fd){
@@ -156,5 +163,8 @@ void Client::set_Request(std::string key, std::string value){
 }
 void Client::set_Response(std::string key, std::string value){
 	this->_Client_ResponseMap[key] = value;
+}
+void Client::set_error_code(std::string error_code){
+	this->_error_code = error_code;
 }
 

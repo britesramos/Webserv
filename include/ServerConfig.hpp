@@ -34,6 +34,7 @@ class ServerConfig{
 		std::string getServerName() const;
 		int getMaxClientSize() const;
 		std::string getErrorPage(std::string code) const;
+		std::map<std::string, std::string> getErrorPages() const;
 		const std::unordered_map<std::string, Location>& getLocations() const;
 
 		void print() const;
