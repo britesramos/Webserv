@@ -1,6 +1,6 @@
 #include "../include/Client.hpp"
 
-Client::Client(int socket_fd):_Client_socket(socket_fd){
+Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
@@ -11,12 +11,13 @@ Client::~Client(){
 		close(this->_Client_socket);
 }
 
-Client::Client(const Client& other){
-	this->_Client_socket = other._Client_socket;
-	this->_error_code = other._error_code;
-	this->_Client_RequestMap = other._Client_RequestMap;
-	this->_Client_ResponseMap = other._Client_ResponseMap;
-}
+// Client::Client(const Client& other){
+// 	this->_Client_socket = other._Client_socket;
+// 	this->_error_code = other._error_code;
+// 	this->_Client_RequestMap = other._Client_RequestMap;
+// 	this->_response = other._response;
+// 	this->_server_config = other._server_config;
+// }
 
 Client& Client::operator=(const Client& other){
 	if (this != &other)
@@ -24,11 +25,13 @@ Client& Client::operator=(const Client& other){
 		this->_Client_socket = other._Client_socket;
 		this->_error_code = other._error_code;
 		this->_Client_RequestMap = other._Client_RequestMap;
-		this->_Client_ResponseMap = other._Client_ResponseMap;
+		this->_response = other._response;
+		this->_server_config = other._server_config;
 	}
 	return *this;
 }
 
+//Parsing methods:
 //Finds the position of the delimiter in the string and returns it
 int Client::getpos(std::string str, std::string delimiter, int start){
 	size_t pos = str.find(delimiter, start);
@@ -132,6 +135,131 @@ int Client::parseClientRequest(std::string request){
 	return 0;
 }
 
+//Building response methods:
+
+int Client::handle_get_request(){
+	std::string response;
+	std::string url_path = this->get_Request("url_path");
+	if (is_method_allowed(url_path, "GET") == true){
+		//1)Build response:
+		std::cout << "GET request for: " << url_path << std::endl;
+		std::string body = build_body(url_path, 0);
+		if (body.empty())
+			return 1;
+		std::string header = build_header(body);
+		std::string status_line = build_status_line("200", "OK");
+		response = status_line + header;
+		std::cout << "Response: " << response << std::endl;
+		response += body;
+	}
+	this->_response = response;
+	return 0;
+}
+
+std::string Client::build_status_line (std::string status_code, std::string status_message){
+	std::string http_version = this->_Client_RequestMap["http_version"];
+	std::string status_line = http_version + " " + status_code + " " + status_message + "\r\n";
+	return (status_line);
+}
+
+std::string Client::build_header(std::string body){
+	std::string header = "Content-Type: text/html\r\n";
+	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+	header += "Connection: close\r\n";
+	header += "\r\n";
+	return (header);
+}
+
+//TODO: I think it is only matching url_paths to the locations map, it should look for the logest prefix match instead.
+std::string Client::findRoot(const std::string& url_path){
+	std::string root;
+	std::unordered_map<std::string, Location> locations;
+	locations = this->_server_config.getLocations();
+	
+	std::string best_match = "";
+	for (const auto& pair : locations) {
+		const std::string& path = pair.first;
+		if (url_path.compare(0, path.length(), path) == 0 && 
+		    (url_path.length() == path.length() || url_path[path.length()] == '/' || path == "/")) {
+			if (path.length() > best_match.length())
+				best_match = path;
+		}
+	}
+
+	const Location& location = locations.at(best_match);
+	//TODO: Find a way to check if there is a location that matches that url_path.
+	//1) If no location found, return default root:
+	// else{
+	// 	std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
+	// 	root = "www/";
+	// }
+	//2) Get root from location:
+	root = location.getRoot();
+	if (root.empty()){
+		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
+		return "www/";
+	}
+	//3) Return root:
+	return root;
+}
+
+std::string Client::build_body(const std::string& url_path, int flag){
+	std::cout << "Building response body for: " << url_path << std::endl;
+	//1)Find file to build body with:
+	std::string root;
+	if (flag == 1)
+		root = url_path;
+	else{
+		if (url_path == "/")
+			root = "www/html/.html";
+		else{
+			root = findRoot(url_path);
+			root += url_path;
+		}
+	}
+	std::cout << "Root in build_body after findRoot : " << root << std::endl;
+	//2)Opening file and converting into a string to be send back at the client:
+	std::ifstream html_file(root);
+	std::ostringstream body_stream;
+	if (!html_file.is_open()){
+		set_error_code("404");
+		std::string body = body_stream.str();
+		return body;
+	}
+	body_stream << html_file.rdbuf();
+	std::string body = body_stream.str();
+	html_file.close();
+	return body;
+}
+
+bool Client::is_method_allowed(const std::string& url_path, std::string method){
+	std::unordered_map<std::string, Location> locations = this->_server_config.getLocations();
+
+	std::string best_match = "";
+	for (const auto& pair : locations) {
+		const std::string& path = pair.first;
+		if (url_path.compare(0, path.length(), path) == 0 && 
+		    (url_path.length() == path.length() || url_path[path.length()] == '/' || path == "/")) {
+			if (path.length() > best_match.length())
+				best_match = path;
+		}
+	}
+
+	const Location& location = locations.at(best_match);
+	// Location location = locations[url_path];
+	const std::vector<std::string> allowed_methods = location.get_methods();
+	for (size_t i = 0; i < allowed_methods.size(); ++i){
+		std::cout << "method: " << allowed_methods[i] << std::endl; //TEMP
+		if (allowed_methods[i] == method)
+			return true;
+	}
+	std::cout << RED << "METHOD NOT ALLOWED!" << std::endl; //What happens in this case? The website doesnt change?
+	this->_error_code = "405";
+	return false;
+}
+
+
+
 
 //***Getters***//
 int Client::get_Client_socket(){
@@ -140,14 +268,11 @@ int Client::get_Client_socket(){
 const std::unordered_map<std::string, std::string>& Client::get_RequestMap() const{
 	return (this->_Client_RequestMap);
 }
-const std::unordered_map<std::string, std::string>& Client::get_ResponseMap() const{
-	return (this->_Client_ResponseMap);
-}
 std::string Client::get_Request(std::string key){
 	return (this->_Client_RequestMap.at(key));
 }
-std::string Client::get_Response(std::string key){
-	return (this->_Client_ResponseMap.at(key));
+std::string Client::get_Response(){
+	return (this->_response);
 }
 std::string Client::get_error_code(){
 	return (this->_error_code);
@@ -160,9 +285,6 @@ void Client::set_Client_socket(int socket_fd){
 }
 void Client::set_Request(std::string key, std::string value){
 	this->_Client_RequestMap[key] = value;
-}
-void Client::set_Response(std::string key, std::string value){
-	this->_Client_ResponseMap[key] = value;
 }
 void Client::set_error_code(std::string error_code){
 	this->_error_code = error_code;

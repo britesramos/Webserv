@@ -50,7 +50,7 @@ int Server::startserver(){
 }
 
 int Server::addClient(int new_connection_socket_fd){
-	auto new_client = std::make_shared<Client>(new_connection_socket_fd);
+	auto new_client = std::make_shared<Client>(new_connection_socket_fd, this->_config_data);
 	auto insert_result = _clients.insert({new_connection_socket_fd, new_client});
 	if (!insert_result.second) {
 		std::cerr << RED << "Error adding client to clients map" << std::endl;

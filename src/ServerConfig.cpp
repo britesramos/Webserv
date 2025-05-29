@@ -9,6 +9,7 @@ ServerConfig::ServerConfig()
 	this->error_pages["400"] = "/error_pages/400.html";
 	this->error_pages["403"] = "/error_pages/403.html";
 	this->error_pages["404"] = "/error_pages/404.html";
+	this->error_pages["405"] = "/error_pages/405.html";
 	this->error_pages["413"] = "/error_pages/413.html";
 	this->error_pages["500"] = "/error_pages/500.html";
 	this->error_pages["502"] = "/error_pages/502.html";
