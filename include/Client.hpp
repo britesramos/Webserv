@@ -2,6 +2,10 @@
 #include <sys/socket.h>
 #include <unordered_map>
 #include <unistd.h>
+#include <fstream>
+#include <sstream>
+
+#include "../include/ServerConfig.hpp"
 
 #pragma once
 
@@ -26,32 +30,20 @@
 
 //GET and DELETE requests have the same structure and dont have a body.
 
-
-
 //!!!!!!!!!!!!!If the request doesnt follow the HTTP standard, you can reject it with an appropriate error message (400 Bad Request).!!!!!!!!!!!
 
 class Client {
 	private:
-		int											_Client_socket; //socket descriptor
-		std::string									_error_code;
-		std::unordered_map<std::string, std::string> _Client_RequestMap; //Request
-		std::unordered_map<std::string, std::string> _Client_ResponseMap; //Response
-		// std::string _Client_http_method; //GET POST DELETE
-		// std::string _Client_url_path; // /index.html
-		// std::string _Client_http_version; //HTTP/1.1
-		// std::string _Client_host; //localhost:8080
-		// std::string _Client_port; //8080
-		// std::string _Client_agent; //browser or a tool like curl
-		// std::string _Client_accept;	//Indicates the type of content that the client can process
-		// /****For POST requests, the request includes a body with data to be sent to the server: ***/
-		// std::string _Client_POST_body_content; 
-		// std::string _Client_POST_body_type; 
-		// std::string _Client_POST_body_length;
+		int												_Client_socket; //socket descriptor
+		std::string										_error_code;
+		std::unordered_map<std::string, std::string>	_Client_RequestMap; //Request
+		std::string										_response; //Response to be sent to the client
+		ServerConfig&									_server_config; //Server configuration for the client
 
 	public:
-		Client(int socket_fd);
+		Client(int socket_fd, ServerConfig& server_config);
 		~Client();
-		Client(const Client& other);
+		// Client(const Client& other);
 		Client& operator=(const Client& other);
 
 		//Parsing methods
@@ -60,19 +52,28 @@ class Client {
 		int parse_firstline(std::string request);
 		int parse_header(std::string request);
 		int parse_body(std::string request);
+
+		//Building response methods
+		int handle_get_request();
+		// void handle_post_request();
+		// void handle_delete_request();
+
+		bool is_method_allowed(const std::string& url_path, std::string method);
+		std::string findRoot(const std::string& url_path);
+		std::string build_body(const std::string& url_path, int flag = 0);
+		std::string build_header(std::string body);
+		std::string build_status_line(std::string status_code, std::string status_message);
 		
 		//Getters
 		int get_Client_socket();
 		std::string get_error_code();
 		const std::unordered_map<std::string, std::string>& get_RequestMap() const;
-		const std::unordered_map<std::string, std::string>& get_ResponseMap() const;
 		std::string get_Request(std::string key);
-		std::string get_Response(std::string key);
+		std::string get_Response();
 
 		//Setters
 		void set_Client_socket(int socket_fd);
 		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
-		void set_Response(std::string key, std::string value);
 
 };
