@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "../include/ServerConfig.hpp"
+#include "../include/Cgi.hpp"
 
 #pragma once
 
@@ -39,6 +40,7 @@ class Client {
 		std::unordered_map<std::string, std::string>	_Client_RequestMap; //Request
 		std::string										_response; //Response to be sent to the client
 		ServerConfig&									_server_config; //Server configuration for the client
+		bool isCGI;
 
 	public:
 		Client(int socket_fd, ServerConfig& server_config);
@@ -57,6 +59,7 @@ class Client {
 		int handle_get_request();
 		// void handle_post_request();
 		// void handle_delete_request();
+		int handle_cgi_response(Cgi &cgi);
 
 		bool is_method_allowed(const std::string& url_path, std::string method);
 		std::string findRoot(const std::string& url_path);
@@ -70,10 +73,12 @@ class Client {
 		const std::unordered_map<std::string, std::string>& get_RequestMap() const;
 		std::string get_Request(std::string key);
 		std::string get_Response();
+		bool get_isCgi();
 
 		//Setters
 		void set_Client_socket(int socket_fd);
 		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
+		void set_isCgi(bool value);
 
 };

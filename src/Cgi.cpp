@@ -62,10 +62,10 @@ void Cgi::start_cgi(Location config)
 		if (config_allowed_methods[i] == "DELETE")
 			this->del = true;
 	}
-	// bool config_autoindex = config.getAutoindex();
+	this->config_autoindex = config.getAutoindex();
 	// if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
 	// {
-	// 	this->code_status = 403;
+	// 	client.set_error_code("404");
 	// 	return ;
 	// }
 
@@ -103,7 +103,7 @@ void Cgi::run_cgi(Client& client)
 
 		creating_cgi_env(client);
 		execve(argv[0], const_cast<char* const*>(argv), env.data());
-		this->code_status = 404; // or bad request?
+		client.set_error_code("404");; // or bad request?
 		perror("execve fail");
 		exit(1);
 	}
@@ -112,24 +112,23 @@ void Cgi::run_cgi(Client& client)
 		//parent
 		close(this->cgi_out[WRITE]); // TODO: return pipe for the write function 
 
-		char buffer[1024]; // just for testing
-        ssize_t nbytes;
-        while ((nbytes = read(this->cgi_out[READ], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[nbytes] = '\0';
-            std::cout << "CGI output: \n" << buffer; // to print in the terminal
-        }
-		this->code_status = 200;
+		// char buffer[1024]; // just for testing
+        // ssize_t nbytes;
+        // while ((nbytes = read(this->cgi_out[READ], buffer, sizeof(buffer) - 1)) > 0) {
+        //     buffer[nbytes] = '\0';
+        //     std::cout << "CGI output: \n" << buffer; // to print in the terminal
+        // }
+		client.set_error_code("200");
         // close(this->cgi_out[READ]);
 		int status;
 		waitpid(pid, &status, WNOHANG);
+
 		if (status == 1)
 		{
 			std::cout << "error running cgi!" << std::endl;
 		}
 	}
-
 }
-
 
 	void Cgi::set_code_status(int code)
 	{

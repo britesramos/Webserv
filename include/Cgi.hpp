@@ -25,6 +25,7 @@ class Cgi {
 		bool get;
 		bool post;
 		bool del;
+		bool config_autoindex;
 		int code_status;
 	public:
 		Cgi();

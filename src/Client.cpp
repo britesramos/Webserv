@@ -2,6 +2,7 @@
 
 Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
+	this->isCGI = false;
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
 
@@ -27,6 +28,7 @@ Client& Client::operator=(const Client& other){
 		this->_Client_RequestMap = other._Client_RequestMap;
 		this->_response = other._response;
 		this->_server_config = other._server_config;
+		this->isCGI = other.isCGI;
 	}
 	return *this;
 }
@@ -156,6 +158,27 @@ int Client::handle_get_request(){
 	return 0;
 }
 
+int Client::handle_cgi_response(Cgi &cgi)
+{
+    char buffer[1024];
+    ssize_t bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1);
+    if (bytes_read < 0) {
+        perror("read");
+        return -1;
+    }
+
+    buffer[bytes_read] = '\0';
+
+    std::string status_line = build_status_line("200", "OK");
+    std::string response = status_line;
+    response += buffer;
+
+    std::cout << "Response: " << response << std::endl;
+
+    this->_response = response;
+    return 0;
+}
+
 std::string Client::build_status_line (std::string status_code, std::string status_message){
 	std::string http_version = this->_Client_RequestMap["http_version"];
 	std::string status_line = http_version + " " + status_code + " " + status_message + "\r\n";
@@ -278,6 +301,10 @@ std::string Client::get_error_code(){
 	return (this->_error_code);
 }
 
+bool Client::get_isCgi()
+{
+	return (this->isCGI);
+}
 
 //***Setters***//
 void Client::set_Client_socket(int socket_fd){
@@ -290,3 +317,7 @@ void Client::set_error_code(std::string error_code){
 	this->_error_code = error_code;
 }
 
+void Client::set_isCgi(bool value)
+{
+	this->isCGI = value;
+}

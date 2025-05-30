@@ -91,24 +91,29 @@ int Webserver::main_loop(){
 		//PROCESSING EVENTS:
 		for (int i = 0; i < epoll_num_ready_events; ++i){
 			std::cout << "Event fd: " << events[i].data.fd << std::endl;
+			Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
+			std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
 				//If the socket fd is the server socket fd there is a new connection:
 			if (is_server_fd(events[i].data.fd) == true){
 				if (accept_connection(this->_servers[i]) == 1)
 					return 1;
 			}
+			
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
 			else {
+				// if (client->get_isCgi() == true && events[i].events & EPOLLIN)
+				// 	//run_cgi;
 				if (events[i].events & EPOLLIN){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					if (process_request(events[i].data.fd) == -1)
 						break ;
 				}
+				// else if (client->get_isCgi() == true && events[i].events & EPOLLOUT)
+				// 	//run_cgi;
 				else if (events[i].events & EPOLLOUT){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					if (send_response(events[i].data.fd) == 1)
 						return 1;
-					Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
-					std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
 					close_connection(client);
 				}
 			}
@@ -205,7 +210,28 @@ int Webserver::process_request(int client_fd){
 	std::cout << "this_client_server: " << this_client_server << std::endl;
 	std::shared_ptr<Client>& client = getServerBySocketFD(this_client_server)->getclient(client_fd);
 	client->parseClientRequest(request);
-	build_response(client_fd);
+	if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
+	{
+		std::cout << "CGI response" << std::endl;
+		cgi.start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
+		cgi.run_cgi(*client);
+		if (addEpollFd(cgi.get_cgi_out(READ), EPOLLIN) == 1)
+		{
+			std::cout << "not possible to add Cgi-out Fd to epoll" << std::endl;
+			return 1;
+		}
+		if (client->handle_cgi_response(cgi) == SUCCESS){
+		struct epoll_event event;
+		event.data.fd = client_fd;
+		event.events = EPOLLOUT;
+		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
+			std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+			return 1;
+		}
+		client->set_isCgi(true);
+	}
+	else
+		build_response(client_fd); // this should be inside? 
 	return 0;
 }
 
