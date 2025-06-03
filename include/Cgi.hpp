@@ -8,11 +8,13 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <vector>
-#include "Client.hpp"
+// #include "Client.hpp"
 #include "Server.hpp"
 
 #define WRITE 1
 #define READ 0
+
+class Client;
 
 class Cgi {
 	private:

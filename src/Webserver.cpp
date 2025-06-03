@@ -35,6 +35,7 @@ int Webserver::addServerSockets(){
 	}
 	return 0;
 }
+
 int Webserver::addEpollFd(int new_connection_socket_fd, uint32_t events){
 	if (new_connection_socket_fd <= 0){
 		std::cout << RED << "Error: Invalid socket fd: " << new_connection_socket_fd << std::endl;
@@ -91,16 +92,32 @@ int Webserver::main_loop(){
 		//PROCESSING EVENTS:
 		for (int i = 0; i < epoll_num_ready_events; ++i){
 			std::cout << "Event fd: " << events[i].data.fd << std::endl;
-			Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
-			std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
 				//If the socket fd is the server socket fd there is a new connection:
 			if (is_server_fd(events[i].data.fd) == true){
 				if (accept_connection(this->_servers[i]) == 1)
 					return 1;
 			}
-			
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
 			else {
+					if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
+					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
+
+					// Read CGI response
+						if (client->handle_cgi_response(*client->get_cgi()) == 0) {
+							// Remove CGI FD from epoll
+							epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+							// close(events[i].data.fd); // Optional: close pipe if you're done with it
+
+							// Now modify the client FD to EPOLLOUT so response can be sent
+							struct epoll_event event;
+							event.data.fd = client->get_Client_socket();
+							event.events = EPOLLOUT;
+							if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+								std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
+								return 1;
+							}
+						}
+					}
 				// if (client->get_isCgi() == true && events[i].events & EPOLLIN)
 				// 	//run_cgi;
 				if (events[i].events & EPOLLIN){
@@ -109,11 +126,13 @@ int Webserver::main_loop(){
 						break ;
 				}
 				// else if (client->get_isCgi() == true && events[i].events & EPOLLOUT)
-				// 	//run_cgi;
-				else if (events[i].events & EPOLLOUT){
+					//run_cgi;
+				if (events[i].events & EPOLLOUT){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					if (send_response(events[i].data.fd) == 1)
 						return 1;
+					Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
+					std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
 					close_connection(client);
 				}
 			}
@@ -169,6 +188,7 @@ int Webserver::build_response(int client_fd){
 }
 
 bool Webserver::is_server_fd(int fd){
+	std::cout << "Checking if socket fd is a server socket fd: " << fd << std::endl;
 	for (size_t i = 0; i < this->_servers.size(); ++i){
 		if (this->_servers[i].getServerSocket() == fd){
 			std::cout << GREEN << "Socket fd is a server socket fd: " << fd << std::endl;
@@ -180,6 +200,10 @@ bool Webserver::is_server_fd(int fd){
 }
 
 int Webserver::process_request(int client_fd){
+	if (client_fd < 0) {
+		std::cerr << "Invalid client_fd: " << client_fd << std::endl;
+		return -1;
+	}
 	std::cout << GREEN << "\n====== Processing Client: " << client_fd << " ======" << std::endl;
 	int bytes_received = 0;
 	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
@@ -212,28 +236,41 @@ int Webserver::process_request(int client_fd){
 	client->parseClientRequest(request);
 	if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
 	{
+		Cgi *cgi = new Cgi();
+		client->set_cgi(cgi);
 		std::cout << "CGI response" << std::endl;
-		cgi.start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
-		cgi.run_cgi(*client);
-		if (addEpollFd(cgi.get_cgi_out(READ), EPOLLIN) == 1)
+		client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
+		client->get_cgi()->run_cgi(*client);
+		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
+		if (cgi_out_fd == -1)
 		{
-			std::cout << "not possible to add Cgi-out Fd to epoll" << std::endl;
+			std::cout << RED << "Error getting CGI out fd" << std::endl;
 			return 1;
 		}
-		if (client->handle_cgi_response(cgi) == SUCCESS){
-		struct epoll_event event;
-		event.data.fd = client_fd;
-		event.events = EPOLLOUT;
-		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
-			std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+		std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
+		client->set_cgiOutputfd(cgi_out_fd);
+		this->set_cgi_fd_to_client_map(cgi_out_fd, client);
+		if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
+		{
+			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
 			return 1;
 		}
+		// if (client->handle_cgi_response(cgi) == SUCCESS){
+		// 	struct epoll_event event;
+		// 	event.data.fd = client_fd;
+		// 	event.events = EPOLLOUT;
+		// 	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
+		// 		std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+		// 		return 1;
+		// 	}
 		client->set_isCgi(true);
+		// }
 	}
-	else
+	// else
 		build_response(client_fd); // this should be inside? 
 	return 0;
 }
+
 
 int Webserver::accept_connection(Server& server){
 	int new_connection_socket_fd;
@@ -265,6 +302,7 @@ int Webserver::accept_connection(Server& server){
     }
 	return 0;
 }
+
 
 // //Handling Responses
 // std::string Webserver::build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag){
@@ -519,3 +557,15 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	return (locations[matched_prefix]);
 }
 
+std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
+{
+	if (this->cgi_fd_to_client_map.find(cgi_fd) != this->cgi_fd_to_client_map.end())
+		return this->cgi_fd_to_client_map[cgi_fd];
+	else
+		return nullptr;
+}
+
+void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
+{
+	this->cgi_fd_to_client_map[cgi_fd] = client;
+}

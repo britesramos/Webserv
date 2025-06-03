@@ -1,4 +1,5 @@
 #include "../include/Client.hpp"
+#include "../include/Cgi.hpp"
 
 Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
@@ -10,6 +11,7 @@ Client::~Client(){
 	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl; //Should add some kind of client identifier (Socket FD?);
 	if (this->_Client_socket != -1)
 		close(this->_Client_socket);
+	delete this->cgi;
 }
 
 // Client::Client(const Client& other){
@@ -158,25 +160,37 @@ int Client::handle_get_request(){
 	return 0;
 }
 
-int Client::handle_cgi_response(Cgi &cgi)
+int Client::handle_cgi_response(Cgi& cgi)
 {
-    char buffer[1024];
-    ssize_t bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1);
-    if (bytes_read < 0) {
-        perror("read");
-        return -1;
-    }
+	std::cout << "		Handling CGI response..." << std::endl;
+	char buffer[1024];
+	std::string response_body;
+	ssize_t bytes_read;
 
-    buffer[bytes_read] = '\0';
 
-    std::string status_line = build_status_line("200", "OK");
-    std::string response = status_line;
-    response += buffer;
+	while ((bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1)) > 0) {
+		buffer[bytes_read] = '\0';
+		response_body += buffer;
+	}
+	if (bytes_read < 0) {
+		perror("read");
+		return -1;
+	}
+	if(response_body.empty()) {
+		std::cerr << RED << "Error: CGI response body is empty." << std::endl;
+		this->set_error_code("500");
+		return -1;
+	}
 
-    std::cout << "Response: " << response << std::endl;
+	std::string status_line = build_status_line("200", "OK");
+	std::string header = build_header(response_body);
+	std::string response = status_line + header;
+	response += response_body;
 
-    this->_response = response;
-    return 0;
+	std::cout << "Response: " << response << std::endl;
+
+	this->_response = response;
+	return 0;
 }
 
 std::string Client::build_status_line (std::string status_code, std::string status_message){
@@ -283,7 +297,6 @@ bool Client::is_method_allowed(const std::string& url_path, std::string method){
 
 
 
-
 //***Getters***//
 int Client::get_Client_socket(){
 	return (this->_Client_socket);
@@ -306,6 +319,16 @@ bool Client::get_isCgi()
 	return (this->isCGI);
 }
 
+int Client::get_cgiOutputfd()
+{
+	return this->CgiOutputfd;
+}
+
+Cgi* Client::get_cgi()
+{
+	return this->cgi;
+}
+
 //***Setters***//
 void Client::set_Client_socket(int socket_fd){
 	this->_Client_socket = socket_fd;
@@ -320,4 +343,14 @@ void Client::set_error_code(std::string error_code){
 void Client::set_isCgi(bool value)
 {
 	this->isCGI = value;
+}
+
+void Client::set_cgiOutputfd(int fd)
+{
+	this->CgiOutputfd = fd;
+}
+
+void Client::set_cgi(Cgi* cgi)
+{
+	this->cgi = cgi;
 }

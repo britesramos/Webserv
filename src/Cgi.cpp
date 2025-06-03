@@ -30,6 +30,8 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 	this->tmp_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->tmp_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->tmp_env.push_back("SCRIPT_NAME=" + this->path);
+	this->tmp_env.push_back("PATH_INFO=" + client.get_Request("url_path"));
+	this->tmp_env.push_back("QUERY_STRING=" + client.get_Request("query_string"));
 
 	if (method == "POST" && this->post == true)
 	{
@@ -37,6 +39,10 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 		if (!content_lenght.empty())
 		{
 			this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
+		}
+		std::string content_type = client.get_Request("content_type");
+		if (!content_type.empty()) {
+			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
 		}
 	}
 
@@ -122,9 +128,11 @@ void Cgi::run_cgi(Client& client)
         // close(this->cgi_out[READ]);
 		int status;
 		waitpid(pid, &status, WNOHANG);
+		// waitpid(pid, &status, 0);
 
 		if (status == 1)
 		{
+			client.set_error_code("500");
 			std::cout << "error running cgi!" << std::endl;
 		}
 	}

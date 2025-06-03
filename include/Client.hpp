@@ -4,9 +4,10 @@
 #include <unistd.h>
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 #include "../include/ServerConfig.hpp"
-#include "../include/Cgi.hpp"
+// #include "../include/Cgi.hpp"
 
 #pragma once
 
@@ -32,6 +33,7 @@
 //GET and DELETE requests have the same structure and dont have a body.
 
 //!!!!!!!!!!!!!If the request doesnt follow the HTTP standard, you can reject it with an appropriate error message (400 Bad Request).!!!!!!!!!!!
+class Cgi;
 
 class Client {
 	private:
@@ -41,6 +43,8 @@ class Client {
 		std::string										_response; //Response to be sent to the client
 		ServerConfig&									_server_config; //Server configuration for the client
 		bool isCGI;
+		int CgiOutputfd;
+		Cgi *cgi;
 
 	public:
 		Client(int socket_fd, ServerConfig& server_config);
@@ -59,7 +63,7 @@ class Client {
 		int handle_get_request();
 		// void handle_post_request();
 		// void handle_delete_request();
-		int handle_cgi_response(Cgi &cgi);
+		int handle_cgi_response(Cgi& cgi);
 
 		bool is_method_allowed(const std::string& url_path, std::string method);
 		std::string findRoot(const std::string& url_path);
@@ -74,11 +78,14 @@ class Client {
 		std::string get_Request(std::string key);
 		std::string get_Response();
 		bool get_isCgi();
+		int get_cgiOutputfd();
+		Cgi* get_cgi();
 
 		//Setters
 		void set_Client_socket(int socket_fd);
 		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
 		void set_isCgi(bool value);
-
+		void set_cgiOutputfd(int fd);
+		void set_cgi(Cgi* cgi);
 };
