@@ -45,6 +45,7 @@ class Client {
 		bool isCGI;
 		int CgiOutputfd;
 		Cgi *cgi;
+		std::string cgi_buffer;
 
 	public:
 		Client(int socket_fd, ServerConfig& server_config);

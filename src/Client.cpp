@@ -163,34 +163,68 @@ int Client::handle_get_request(){
 int Client::handle_cgi_response(Cgi& cgi)
 {
 	std::cout << "		Handling CGI response..." << std::endl;
+	// char buffer[1024];
+	// std::string response_body;
+	// ssize_t bytes_read;
+
+
+	// while ((bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1)) > 0) {
+	// 	buffer[bytes_read] = '\0';
+	// 	response_body += buffer;
+	// }
+	// if (bytes_read < 0) {
+	// 	perror("read");
+	// 	return -1;
+	// }
+	// if(response_body.empty()) {
+	// 	std::cerr << RED << "Error: CGI response body is empty." << std::endl;
+	// 	exit(1);
+	// 	this->set_error_code("500");
+	// 	return -1;
+	// }
+
+	// std::string status_line = build_status_line("200", "OK");
+	// std::string header = build_header(response_body);
+	// std::string response = status_line + header;
+	// response += response_body;
+
+	// std::cout << "Response: " << response << std::endl;
+
+	// this->_response = response;
+	// return 0;
+
 	char buffer[1024];
-	std::string response_body;
 	ssize_t bytes_read;
 
-
-	while ((bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1)) > 0) {
-		buffer[bytes_read] = '\0';
-		response_body += buffer;
-	}
+	bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1);
 	if (bytes_read < 0) {
 		perror("read");
 		return -1;
 	}
-	if(response_body.empty()) {
-		std::cerr << RED << "Error: CGI response body is empty." << std::endl;
-		this->set_error_code("500");
-		return -1;
+	else if (bytes_read == 0) {
+		std::string status_line = build_status_line("200", "OK");
+		std::string header = build_header(cgi_buffer);
+		std::string full_response = status_line + header + cgi_buffer;
+
+		// std::cout << "Final CGI Response:\n" << full_response << std::endl;
+		this->_response = full_response;
+
+		// check for error in python! trash trash trash
+		if (cgi_buffer.find("Traceback") != std::string::npos) {
+			size_t trace_pos = cgi_buffer.find("Traceback");
+			std::string traceback = cgi_buffer.substr(trace_pos);
+			std::cerr << "CGI Error:\n" << traceback << std::endl;
+			this->set_error_code("500");
+			return -1;
+		}
+		this->cgi_buffer.clear();
+		return 1;
 	}
-
-	std::string status_line = build_status_line("200", "OK");
-	std::string header = build_header(response_body);
-	std::string response = status_line + header;
-	response += response_body;
-
-	std::cout << "Response: " << response << std::endl;
-
-	this->_response = response;
-	return 0;
+	else {
+		buffer[bytes_read] = '\0';
+		cgi_buffer += buffer;
+		return 0;
+	}
 }
 
 std::string Client::build_status_line (std::string status_code, std::string status_message){
@@ -305,7 +339,14 @@ const std::unordered_map<std::string, std::string>& Client::get_RequestMap() con
 	return (this->_Client_RequestMap);
 }
 std::string Client::get_Request(std::string key){
-	return (this->_Client_RequestMap.at(key));
+	std::string request;
+	try {
+		request = this->_Client_RequestMap.at(key);
+	} catch (...)
+	{
+		request = "";
+	}
+	return (request);
 }
 std::string Client::get_Response(){
 	return (this->_response);

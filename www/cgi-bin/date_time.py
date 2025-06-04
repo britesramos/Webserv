@@ -12,6 +12,6 @@ x = datetime.datetime.now()
 print("<strong>", x.strftime("%c"), "</strong>")
 print("<br>")
 print("<br>")
-# print("<a href=\"./.html\">Return home</a>")
+print("<a href=\"../www/html/.html\">Return home</a>")
 
 print("</body></html>")

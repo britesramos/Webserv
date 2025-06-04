@@ -50,9 +50,9 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
 
-	for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
-		std::cout << "				" << this->env[i] << std::endl;
-	}
+	// for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
+	// 	std::cout << "				" << this->env[i] << std::endl;
+	// }
 }
 
 void Cgi::start_cgi(Location config)
@@ -100,6 +100,7 @@ void Cgi::run_cgi(Client& client)
 		// dup2(this->cgi_in[READ], STDIN_FILENO);
 		// close(this->cgi_in[WRITE]);
 		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
+		dup2(this->cgi_out[WRITE], STDERR_FILENO); // adding error from script to the pipe, all the errors are going to print on the browser x.x
 		close(this->cgi_out[WRITE]);
 		close(this->cgi_out[READ]);
 
@@ -109,7 +110,6 @@ void Cgi::run_cgi(Client& client)
 
 		creating_cgi_env(client);
 		execve(argv[0], const_cast<char* const*>(argv), env.data());
-		client.set_error_code("404");; // or bad request?
 		perror("execve fail");
 		exit(1);
 	}
@@ -118,22 +118,21 @@ void Cgi::run_cgi(Client& client)
 		//parent
 		close(this->cgi_out[WRITE]); // TODO: return pipe for the write function 
 
-		// char buffer[1024]; // just for testing
-        // ssize_t nbytes;
-        // while ((nbytes = read(this->cgi_out[READ], buffer, sizeof(buffer) - 1)) > 0) {
-        //     buffer[nbytes] = '\0';
-        //     std::cout << "CGI output: \n" << buffer; // to print in the terminal
-        // }
 		client.set_error_code("200");
-        // close(this->cgi_out[READ]);
 		int status;
-		waitpid(pid, &status, WNOHANG);
-		// waitpid(pid, &status, 0);
-
-		if (status == 1)
-		{
-			client.set_error_code("500");
-			std::cout << "error running cgi!" << std::endl;
+		int result = waitpid(pid, &status, WNOHANG);
+		if (result > 0) {
+			if (WIFEXITED(status)) {
+				int exit_code = WEXITSTATUS(status);
+				if (exit_code == 1) {
+					client.set_error_code("500");
+					std::cout << "error running cgi! exit code = 1" << std::endl;
+				}
+			} else if (WIFSIGNALED(status)) {
+				int sig = WTERMSIG(status);
+				client.set_error_code("500");
+				std::cout << "CGI process was killed by signal: " << sig << std::endl;
+			}
 		}
 	}
 }

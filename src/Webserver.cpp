@@ -99,35 +99,64 @@ int Webserver::main_loop(){
 			}
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
 			else {
+					// CGI
 					if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
 					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
 
 					// Read CGI response
-						if (client->handle_cgi_response(*client->get_cgi()) == 0) {
-							// Remove CGI FD from epoll
-							epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-							// close(events[i].data.fd); // Optional: close pipe if you're done with it
 
-							// Now modify the client FD to EPOLLOUT so response can be sent
-							struct epoll_event event;
-							event.data.fd = client->get_Client_socket();
-							event.events = EPOLLOUT;
-							if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
-								std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
-								return 1;
-							}
+						//EPOLLIN you read from CGI
+						// if (events[i].events & EPOLLIN)
+						// {
+						// 	if (client->handle_cgi_response(*client->get_cgi()) == 0) {
+						// 		// Remove CGI FD from epoll
+						// 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+						// 		close(events[i].data.fd); // Optional: close pipe if you're done with it
+	
+						// 		// Now modify the client FD to EPOLLOUT so response can be sent
+						// 		struct epoll_event event;
+						// 		event.events = EPOLLOUT;
+						// 		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+						// 			std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
+						// 			return 1;
+						// 		}
+
+						// } else if (events[i].events & EPOLLOUT)
+						// {
+						// 	//POST, you are going to send the body of your request to the CGI and then once you are done sending you change the status of EPOLL to EPOLLIN so you can read from the cgi and create a response for the client
+						// }
+						//EPOLLOUT you write the post body
+
+						//if it is POST this will not work
+						// }
+						
+						int result = client->handle_cgi_response(*client->get_cgi());
+						if (result == 1) {
+						epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+						close(events[i].data.fd);
+						this->cgi_fd_to_client_map.erase(events[i].data.fd);
+
+						struct epoll_event event;
+						event.data.fd = client->get_Client_socket();
+						event.events = EPOLLOUT;
+						if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+							perror("epoll_ctl EPOLLOUT");
+							return 1;
 						}
 					}
-				// if (client->get_isCgi() == true && events[i].events & EPOLLIN)
-				// 	//run_cgi;
-				if (events[i].events & EPOLLIN){
+					else if (result == -1) {
+						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
+						exit(1);  // test
+						// handle error here 502, it will be handle in the end? or it will send the error here?
+					}
+					}
+				//client
+				else if (events[i].events & EPOLLIN){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					if (process_request(events[i].data.fd) == -1)
 						break ;
 				}
-				// else if (client->get_isCgi() == true && events[i].events & EPOLLOUT)
-					//run_cgi;
-				if (events[i].events & EPOLLOUT){
+				else if (events[i].events & EPOLLOUT){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					if (send_response(events[i].data.fd) == 1)
 						return 1;
@@ -255,18 +284,9 @@ int Webserver::process_request(int client_fd){
 			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
 			return 1;
 		}
-		// if (client->handle_cgi_response(cgi) == SUCCESS){
-		// 	struct epoll_event event;
-		// 	event.data.fd = client_fd;
-		// 	event.events = EPOLLOUT;
-		// 	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
-		// 		std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
-		// 		return 1;
-		// 	}
 		client->set_isCgi(true);
-		// }
 	}
-	// else
+	else
 		build_response(client_fd); // this should be inside? 
 	return 0;
 }
