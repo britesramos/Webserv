@@ -8,7 +8,7 @@ Webserver::~Webserver(){
 	close(_epoll_fd);
 }
 
-//Epoll methods
+//Epoll methods:
 int Webserver::init_epoll(){
 	this->_epoll_fd = epoll_create1(0);
 	if (this->_epoll_fd == -1)
@@ -593,4 +593,18 @@ std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
 void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
 {
 	this->cgi_fd_to_client_map[cgi_fd] = client;
+}
+
+void Webserver::clean_up(){
+	for (size_t i = 0; i < _servers.size(); ++i){
+		const std::unordered_map<int, std::shared_ptr<Client> >& clients = _servers[i].getClients();
+		for (std::unordered_map<int, std::shared_ptr<Client> >::const_iterator it = clients.begin(); it != clients.end(); ++it){
+			close (it->first);
+		}
+	}
+	for (size_t i = 0; i < this->_servers.size(); ++i){
+		close(this->_servers[i].getServerSocket());
+	}
+	if (this->_epoll_fd > 0)
+		close(this->_epoll_fd);
 }

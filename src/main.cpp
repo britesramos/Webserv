@@ -4,12 +4,15 @@
 #include "../include/ConfigParser.hpp"
 #include "../include/Webserver.hpp"
 
+Webserver* g_webserver_ptr = NULL;
+
 void interrupt_helper(int sig)
 {
 	std::cout << "\n";
 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
 	// TODO: close fds function with clean stuff, clean maps as well
-	// server.closeserver();
+	if (g_webserver_ptr)
+		g_webserver_ptr->clean_up();
 	exit(sig + 128);
 }
 
@@ -38,6 +41,7 @@ int main(int argc, char **argv)
 		
 		//1)Start/init the server(s) + epoll_instance:
 		Webserver webserver;
+		g_webserver_ptr = &webserver;
 		if (webserver.init_epoll() == 1)
 		{
 			std::cerr << "Failed to initialize epoll" << std::endl;
