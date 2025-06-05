@@ -202,7 +202,7 @@ int Webserver::send_response(int client_fd){
 	if (bytes_sent < 0){
 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
 		client->set_error_code("500"); //I am not sure if this can be checked. The way to send the response is trough send() if it doenst work for the correct response it will not work for the 500 html file either.
-		return 1;
+		return 1; //Exit???
 	}
 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
 	return 0;
