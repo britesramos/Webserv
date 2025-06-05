@@ -8,7 +8,7 @@ Webserver::~Webserver(){
 	close(_epoll_fd);
 }
 
-//Epoll methods
+//Epoll methods:
 int Webserver::init_epoll(){
 	this->_epoll_fd = epoll_create1(0);
 	if (this->_epoll_fd == -1)
