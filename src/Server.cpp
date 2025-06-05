@@ -24,6 +24,13 @@ int Server::startserver(){
 		std::cerr << RED << "Error creating socket" << std::endl;
 		return 1;
 	}
+	//Set socket setup as SO_REUSEADDR so we don't need to wait for the OS to release the socket to use again even if it was used recently.
+	int opt = 1;
+	if (setsockopt(this->_Server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		std::cerr << "setsockopt(SO_REUSEADDR) failed" << std::endl;
+		close(this->_Server_socket);
+		return 1;
+	}
 	if (bind(this->_Server_socket, (sockaddr *)&_Server_address, _len_Server_address) < 0)
 	{
 		std::cerr << RED << "Error binding" << std::endl;

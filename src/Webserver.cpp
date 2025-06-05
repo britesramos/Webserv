@@ -589,3 +589,17 @@ void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> cli
 {
 	this->cgi_fd_to_client_map[cgi_fd] = client;
 }
+
+void Webserver::clean_up(){
+	for (size_t i = 0; i < _servers.size(); ++i){
+		const std::unordered_map<int, std::shared_ptr<Client> >& clients = _servers[i].getClients();
+		for (std::unordered_map<int, std::shared_ptr<Client> >::const_iterator it = clients.begin(); it != clients.end(); ++it){
+			close (it->first);
+		}
+	}
+	for (size_t i = 0; i < this->_servers.size(); ++i){
+		close(this->_servers[i].getServerSocket());
+	}
+	if (this->_epoll_fd > 0)
+		close(this->_epoll_fd);
+}

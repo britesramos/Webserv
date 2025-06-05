@@ -71,4 +71,7 @@ class Webserver{
 		int get_epoll_fd() const;
 
 		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
+
+		//Clean_up_method
+		void clean_up();
 };
