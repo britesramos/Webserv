@@ -38,7 +38,7 @@ int Webserver::addServerSockets(){
 
 int Webserver::addEpollFd(int new_connection_socket_fd, uint32_t events){
 	if (new_connection_socket_fd <= 0){
-		std::cout << RED << "Error: Invalid socket fd: " << new_connection_socket_fd << std::endl;
+		std::cout << RED << "Error(addEpollFd): Invalid socket fd: " << new_connection_socket_fd << std::endl;
 		return 1;
 	}
 	struct epoll_event event;
@@ -50,6 +50,23 @@ int Webserver::addEpollFd(int new_connection_socket_fd, uint32_t events){
 	}
 	this->_epoll_event_count++;
 	std::cout << GREEN << "Added new socket fd to epoll interest list: " << event.data.fd << std::endl;
+	return 0;
+}
+
+int Webserver::removeEpollFd(int socket_fd, uint32_t events){
+	if (socket_fd <= 0){
+		std::cout << RED << "Error(removeEpollFd): Invalid socket fd: " << socket_fd << std::endl;
+		return 1;
+	}
+	struct epoll_event event;
+	event.data.fd = socket_fd;
+	event.events = events;
+	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, socket_fd, &event) < 0){
+		std::cout << RED << "Error removing socket fd from epoll interest list: " << event.data.fd << std::endl;
+		return 1;
+	}
+	this->_epoll_event_count--;
+	std::cout << GREEN << "Removed socket fd from epoll interest list: " << event.data.fd << std::endl;
 	return 0;
 }
 
@@ -82,7 +99,11 @@ int Webserver::init_servers(const std::vector<ServerConfig>& config_data_servers
 int Webserver::main_loop(){
 	std::cout << "\n====== !!! WEBSERV PARTY TIME !!! ======\n" << std::endl;
 	while(true){
-		//TODO check if epoll interest list is empty? - Not sure if this is needed. (Adrii has it, but he used poll not epoll)
+		//Check if epoll interest list is empty:
+		if (this->_epoll_event_count == 0){
+			std::cout << RED << "No epoll fds on interest list.\n\n*****Server closing*****" << std::endl;
+			break ;
+		}
 		//EPOLL_WAIT:
 		std::cout << GREEN << "\n\n=============== !!! EPOLL_WAIT TIME !!! ===============" << std::endl;
 		struct epoll_event events[this->_epoll_event_count];
@@ -92,7 +113,7 @@ int Webserver::main_loop(){
 		//PROCESSING EVENTS:
 		for (int i = 0; i < epoll_num_ready_events; ++i){
 			std::cout << "Event fd: " << events[i].data.fd << std::endl;
-				//If the socket fd is the server socket fd there is a new connection:
+			//If the socket fd is the server socket fd there is a new connection:
 			if (is_server_fd(events[i].data.fd) == true){
 				if (accept_connection(this->_servers[i]) == 1)
 					return 1;
@@ -132,7 +153,7 @@ int Webserver::main_loop(){
 						
 						int result = client->handle_cgi_response(*client->get_cgi());
 						if (result == 1) {
-						epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+						removeEpollFd(this->_epoll_fd, 0); //TODO: Check if return error.
 						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 
@@ -158,17 +179,13 @@ int Webserver::main_loop(){
 				}
 				else if (events[i].events & EPOLLOUT){
 					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
-					if (send_response(events[i].data.fd) == 1)
-						return 1;
+					send_response(events[i].data.fd);
 					Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
 					std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
+					std::cout << GREEN << "Closing connection for client fd: " << events[i].data.fd << std::endl;
 					close_connection(client);
 				}
 			}
-			//TODO: Find the client by fd and check if it has an error code:
-			// if (client->get_error_code() != "200"){
-			// 	handle_error(client);
-			// }
 		}
 	}
 		return 0;
@@ -178,11 +195,13 @@ int Webserver::main_loop(){
 int Webserver::send_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
+	if (client->get_error_code() != "200")
+		client->handle_error();
 	std::string response = client->get_Response();
 	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
 	if (bytes_sent < 0){
 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
-		client->set_error_code("500");
+		client->set_error_code("500"); //I am not sure if this can be checked. The way to send the response is trough send() if it doenst work for the correct response it will not work for the 500 html file either.
 		return 1;
 	}
 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
@@ -193,8 +212,8 @@ int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	if (client->get_Request("method") == "GET"){
-		//if cgi request, handle it separately
 		if (client->handle_get_request() == SUCCESS){
+			//TODO: Create function to modify epoll event. Should this even return 1?
 			struct epoll_event event;
 			event.data.fd = client_fd;
 			event.events = EPOLLOUT;
@@ -204,15 +223,32 @@ int Webserver::build_response(int client_fd){
 			}
 		}
 	}
-	// else if (client->get_Request("method") == "POST"){
-	// 	//if cgi request, handle it separately
-	// 	client->handle_post_request();
-	// }
+	else if (client->get_Request("method") == "POST"){
+		if (client->handle_post_request() == SUCCESS){
+			//TODO: Create function to modify epoll event. Should this even return 1?
+			struct epoll_event event;
+			event.data.fd = client_fd;
+			event.events = EPOLLOUT;
+			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
+				std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+				return 1;
+			}
+		}
+	}
 	// else if (client->get_Request("method") == "DELETE"){
-	//if cgi request, handle it separately
+	// 	if (client->handle_delete_request() == SUCCESS){
+		//TODO: Create function to modify epoll event. Should this even return 1?
+		// struct epoll_event event;
+		// event.data.fd = client_fd;
+		// event.events = EPOLLOUT;
+		// if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
+		// 	std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+		// 	return 1;
+		// }
+	//}
+	//}
 	//else
-	// 	client->handle_delete_request();
-	// }
+	// ?????
 	return 0;
 }
 
@@ -245,6 +281,7 @@ int Webserver::process_request(int client_fd){
 		else{
 			std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
 		}
+		//TODO: To be handle differentely. Client should be set with an error. And latter on build a error response.
 		//Remove client from epoll:
 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 		//Remove client from clients map:
@@ -323,195 +360,14 @@ int Webserver::accept_connection(Server& server){
 	return 0;
 }
 
-
-// //Handling Responses
-// std::string Webserver::build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag){
-// 	std::cout << "Building response body for: " << url_path << std::endl;
-// 	//1)Find file to build body with:
-// 	std::string root;
-// 	if (flag == 1)
-// 		root = url_path;
-// 	else{
-// 		if (url_path == "/")
-// 			root = "www/html/.html";
-// 		else{
-// 			root = findRoot(client->get_Client_socket(), url_path);
-// 			root += url_path;
-// 		}
-// 	}
-// 	std::cout << "Root in build_body after findRoot : " << root << std::endl;
-// 	//2)Opening file and converting into a string to be send back at the client:
-// 	std::ifstream html_file(root);
-// 	std::ostringstream body_stream;
-// 	if (!html_file.is_open()){
-// 		client->set_error_code("404");
-// 		std::string body = body_stream.str();
-// 		return body;
-// 	}
-// 	body_stream << html_file.rdbuf();
-// 	std::string body = body_stream.str();
-// 	html_file.close();
-// 	return body;
-// }
-
-//TODO: Make sure that the headers look allways like this. If there are other things depending on the request????
-// std::string Webserver::build_header(std::string body){
-// 	std::string header = "Content-Type: text/html\r\n";
-// 	header += "Content-Length: " + std::to_string(body.size()) + "\r\n";
-// 	header += "Connection: close\r\n";
-// 	header += "\r\n";
-// 	return (header);
-// }
-
-// std::string Webserver::findRoot(int client_fd, const std::string& url_path){
-// 	std::string root;
-// 	Location locations;
-// 	locations = getLocationByPath(client_fd, url_path);
-// 	//TODO: Find a way to check if there is a location that matches that url_path.
-// 	//1) If no location found, return default root:
-// 	// else{
-// 	// 	std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
-// 	// 	root = "www/";
-// 	// }
-// 	//2) Get root from location:
-// 	root = locations.getRoot();
-// 	if (root.empty()){
-// 		std::cerr << RED << "Error: No root found for url path: " << url_path << std::endl;
-// 		return "www/";
-// 	}
-// 	//3) Return root:
-// 	return root;
-// }
-
-// std::string Webserver::build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message){
-// 	std::unordered_map<std::string, std::string> requestMap = client->get_RequestMap();
-// 	std::string http_version = requestMap["http_version"];
-// 	std::string status_line = http_version + " " + status_code + " " + status_message + "\r\n";
-// 	return (status_line);
-// }
-
-// int Webserver::handle_get_request(std::shared_ptr<Client>& client, const std::string& url_path){
-// 	if (is_method_allowed(client, url_path, "GET") == true){
-// 		//1)Build response:
-// 		std::cout << "GET request for: " << url_path << std::endl;
-// 		std::string body = build_body(client, url_path, 0);
-// 		if (body.empty())
-// 			return 1;
-// 		std::string header = build_header(body);
-// 		std::string status_line = build_status_line(client , "200", "OK");
-// 		std::string response = status_line + header;
-// 		std::cout << "Response: " << response << std::endl;
-// 		response += body;
-		
-// 		//2)Send response to client:
-// 		int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
-// 		if (bytes_sent < 0){
-// 			std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
-// 			client->set_error_code("500");
-// 			return 1;
-// 		}
-// 		std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
-// 	}
-// 	return 0;
-// }
-
 void Webserver::close_connection(std::shared_ptr<Client>& client){
 	//1)Remove from epoll interest list:
-	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client->get_Client_socket(), NULL)< 0)
-		std::cerr << RED << "Error removing client fd from epoll interest list: " << client->get_Client_socket() << " - " << strerror(errno) << std::endl;
-	else
-		std::cout << GREEN << "Successfully removed client fd from epoll interest list: " << client->get_Client_socket() << std::endl;
+	removeEpollFd(client->get_Client_socket(), 0);
 	//2)Remove from client_server_map:
 	this->getServerBySocketFD(this->client_server_map.find(client->get_Client_socket())->second)->removeClient(client->get_Client_socket());
 	this->client_server_map.erase(client->get_Client_socket());
 
 }
-
-// bool Webserver::is_method_allowed(std::shared_ptr<Client>& client, const std::string& url_path, std::string method){
-// 	Location location = getLocationByPath(client->get_Client_socket(), url_path);
-// 	std::vector<std::string> allowed_methods = location.get_methods();
-// 	for (size_t i = 0; i < allowed_methods.size(); ++i){
-// 		// std::cout << "method: " << allowed_methods[i] << std::endl; //TEMP
-// 		if (allowed_methods[i] == method)
-// 			return true;
-// 	}
-// 	std::cout << "METHOD NOT ALLOWED!" << std::endl; //What happens in this case? The website doesnt change?
-// 	client->set_error_code("405");
-// 	return false;
-// }
-
-//TODO: Store information somewhere. HOW TO HANDLE POST REQUESTS????
-// int Webserver::handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path){
-// 	if (is_method_allowed(client, url_path, "POST") == true){
-// 		std::unordered_map<std::string, std::string> Request_Map = client->get_RequestMap();
-// 		if (Request_Map["Content-Type"] == "application/x-www-form-urlencoded")
-// 			handle_post_form_request(client, url_path);
-// 		(void)url_path;
-
-// 		//1)Inspect content-type
-// 		//2)Deal with request apropriatelly
-// 		//3)Send response back
-// 	}
-// 	handle_success(client);
-// 	return 0;
-// }
-
-// int Webserver::handle_post_form_request(std::shared_ptr<Client>& client, const std::string& url_path){
-// 	std::string body = client->get_Request("body");
-// 	//1)Decode URL and Parse form data into an unordered_map:
-// 	std::unordered_map<std::string, std::string> decoded_url = decode_url(body); //TODO
-// 	//2)Store data in the correct path:
-
-// }
-
-
-//TODO: Clean up send and building header (use previous method)
-// void Webserver::handle_success(std::shared_ptr<Client>& client){
-// 	//1)Build response:
-// 	std::unordered_map<std::string, std::string> clientRequest = client->get_RequestMap();
-// 	std::string status_line = clientRequest["http_version"] + " 200 " + "OK" + "\r\n";
-// 	std::string body = build_body(client, "/Success.html", 0);
-// 	std::string header = build_header(body);
-// 	std::string response = status_line + header;
-// 	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
-// 	response += body;
-// 	//2)Send response to client:
-// 	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
-// 	if (bytes_sent < 0)
-// 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
-// 	else
-// 		std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
-// }
-
-// int Webserver::handle_error(std::shared_ptr<Client>& client){
-// 	//1) Get error_code:
-// 	std::string error_code = client->get_error_code();
-
-// 	//2) Get error_message:
-// 	int server_fd = this->client_server_map[client->get_Client_socket()];
-// 	Server* server = getServerBySocketFD(server_fd);
-// 	ServerConfig config = server->getServerConfig();
-// 	std::map<std::string, std::string> error_pages = config.getErrorPages();
-// 	std::string error_message = error_pages[error_code];
-
-// 	//3) Build response to send to client:
-// 	std::cout << RED << "Error: " << error_code << std::endl;
-// 	std::string status_line = build_status_line(client, error_code, error_message);
-// 	std::string body = build_body(client, "error_pages/" + error_code + ".html", 1);
-// 	std::string header = build_header(body);
-// 	std::string response = status_line + header;
-// 	std::cout << "Response: " << response << std::endl; //temporary, should be removed
-// 	response += body;
-// 	//3) Send response to client:
-// 	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
-// 	if (bytes_sent < 0){
-// 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
-// 		client->set_error_code("500");
-// 		return 1;
-// 	}
-// 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
-// 	return 0;
-// }
 
 //Getters and Setters
 const std::vector<Server>& Webserver::get_servers() const{
@@ -543,13 +399,6 @@ int Webserver::get_epoll_fd() const{
 	return this->_epoll_fd;
 }
 
-//Utility methods
-void Webserver::printServerFDs() const {
-	std::cout << "Server FDs:" << std::endl;
-	for (size_t i = 0; i < _servers.size(); ++i) {
-		std::cout << "Server " << i << " FD: " << _servers[i].getServerSocket() << std::endl;
-	}
-}
 
 //TODO: To be deleted from here? Moved to ServerConfig.
 Location Webserver::getLocationByPath(int client_fd, const std::string& url_path){
@@ -571,7 +420,7 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	for (auto it = locations.begin(); it != locations.end(); ++it){
 		if (url_path.rfind(it->first, 0) == 0){
 			if (it->first.size() > matched_prefix.size())
-				matched_prefix = it->first;
+			matched_prefix = it->first;
 		}
 	}
 	return (locations[matched_prefix]);
@@ -580,9 +429,9 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
 {
 	if (this->cgi_fd_to_client_map.find(cgi_fd) != this->cgi_fd_to_client_map.end())
-		return this->cgi_fd_to_client_map[cgi_fd];
+	return this->cgi_fd_to_client_map[cgi_fd];
 	else
-		return nullptr;
+	return nullptr;
 }
 
 void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
@@ -601,5 +450,13 @@ void Webserver::clean_up(){
 		close(this->_servers[i].getServerSocket());
 	}
 	if (this->_epoll_fd > 0)
-		close(this->_epoll_fd);
+	close(this->_epoll_fd);
+}
+
+//Utility methods
+void Webserver::printServerFDs() const {
+	std::cout << "Server FDs:" << std::endl;
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		std::cout << "Server " << i << " FD: " << _servers[i].getServerSocket() << std::endl;
+	}
 }

@@ -29,6 +29,7 @@ class Webserver{
 		int init_epoll();
 		int addServerSockets();
 		int addEpollFd(int new_connection_socket_fd, uint32_t events);
+		int removeEpollFd(int socket_fd, uint32_t events);
 		int epoll_wait_util(struct epoll_event* events);
 
 		//Server methods
@@ -44,19 +45,9 @@ class Webserver{
 
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
-		// int handle_get_request(std::shared_ptr<Client>& client, const std::string& url_path);
-		// bool is_method_allowed(std::shared_ptr<Client>& client, const std::string& url_path, std::string method);
-		// int handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path);
-		// int handle_delete_request(int client_fd, const std::string& url_path);
-		// void handle_success(std::shared_ptr<Client>& client);
 		// int handle_error(std::shared_ptr<Client>& client);
-		// std::string build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message);
-		// std::string build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag);
-		// std::string findRoot(int client_fd, const std::string& url_path);
 		std::string build_header(std::string body);
 		void close_connection(std::shared_ptr<Client>& client);
-		//Handle Post Request Method
-		// int handle_post_form_request(std::shared_ptr<Client>& client, const std::string& url_path);
 
 		//Debug methods
 		void printServerFDs() const;

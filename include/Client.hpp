@@ -53,16 +53,18 @@ class Client {
 		// Client(const Client& other);
 		Client& operator=(const Client& other);
 
-		//Parsing methods
+		//Parsing methods:
 		int getpos(std::string str, std::string delimiter, int start);
 		int parseClientRequest(std::string request);
 		int parse_firstline(std::string request);
 		int parse_header(std::string request);
 		int parse_body(std::string request);
 
-		//Building response methods
+		//Building response methods:
 		int handle_get_request();
-		// void handle_post_request();
+		void handle_error();
+		int handle_post_request();
+		void handle_success();
 		// void handle_delete_request();
 		int handle_cgi_response(Cgi& cgi);
 
