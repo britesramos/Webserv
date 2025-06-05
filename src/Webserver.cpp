@@ -129,26 +129,31 @@ int Webserver::main_loop(){
 
 						//if it is POST this will not work
 						// }
-						
-						int result = client->handle_cgi_response(*client->get_cgi());
-						if (result == 1) {
-						epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-						close(events[i].data.fd);
-						this->cgi_fd_to_client_map.erase(events[i].data.fd);
+						// if (EPOLLIN){
+							int result = client->handle_cgi_response(*client->get_cgi());
+							if (result == 1) {
+							epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+							close(events[i].data.fd);
+							this->cgi_fd_to_client_map.erase(events[i].data.fd);
 
-						struct epoll_event event;
-						event.data.fd = client->get_Client_socket();
-						event.events = EPOLLOUT;
-						if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
-							perror("epoll_ctl EPOLLOUT");
-							return 1;
-						}
-					}
-					else if (result == -1) {
-						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
-						exit(1);  // test
-						// handle error here 502, it will be handle in the end? or it will send the error here?
-					}
+							struct epoll_event event;
+							event.data.fd = client->get_Client_socket();
+							event.events = EPOLLOUT;
+							if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+								perror("epoll_ctl EPOLLOUT");
+								return 1;
+							}
+							}
+							else if (result == -1) {
+								std::cerr << RED << "Error reading from CGI pipe" << std::endl;
+								exit(1);  // test
+								// handle error here 502, it will be handle in the end? or it will send the error here?
+							}
+						// }
+						// else if (EPOLLOUT)
+						// {
+							
+						// }
 					}
 				//client
 				else if (events[i].events & EPOLLIN){
@@ -277,17 +282,17 @@ int Webserver::process_request(int client_fd){
 			return 1;
 		}
 		std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
-		client->set_cgiOutputfd(cgi_out_fd);
+		client->set_cgiOutputfd(cgi_out_fd); // TODO: Verificar necessity of this variable
 		this->set_cgi_fd_to_client_map(cgi_out_fd, client);
 		if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
 		{
 			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
 			return 1;
 		}
-		client->set_isCgi(true);
+		client->set_isCgi(true); // TODO: Verify this as well
 	}
 	else
-		build_response(client_fd); // this should be inside? 
+		build_response(client_fd);
 	return 0;
 }
 
