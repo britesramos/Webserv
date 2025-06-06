@@ -160,6 +160,14 @@ int Client::handle_get_request(){
 	return 0;
 }
 
+int Client::handle_post_request(){
+	std::string response;
+	std::string url_path = this->get_Request("url_path");
+	if (is_method_allowed(url_path, "POST") == true)
+		handle_success();
+	return 0;
+}
+
 int Client::handle_cgi_response(Cgi& cgi)
 {
 	std::cout << "		Handling CGI response..." << std::endl;
@@ -329,6 +337,27 @@ bool Client::is_method_allowed(const std::string& url_path, std::string method){
 	return false;
 }
 
+void Client::handle_success(){
+	std::string body = build_body("www/html/Success.html", 1);
+	std::string header = build_header(body);
+	std::string status_line = build_status_line("200", "OK");
+	std::string response = status_line + header;
+	response += body;
+	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	this->_response = response;
+}
+
+void Client::handle_error(){
+	std::cout << RED << "Error: " << this->_error_code << std::endl;
+	std::string error_message = _server_config.getErrorPage(this->_error_code);
+	std::string status_line = build_status_line(this->_error_code, error_message);
+	std::string body = build_body("error_pages/" + this->_error_code + ".html", 1);
+	std::string header = build_header(body);
+	std::string response = status_line + header;
+	std::cout << "Response: " << response << std::endl;
+	response += body;
+	this->_response = response;
+}
 
 
 //***Getters***//
