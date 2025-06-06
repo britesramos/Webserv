@@ -70,6 +70,18 @@ int Webserver::removeEpollFd(int socket_fd, uint32_t events){
 	return 0;
 }
 
+int Webserver::modifyEpollEvent(int socket_fd, uint32_t events){
+	struct epoll_event event;
+	event.data.fd = socket_fd;
+	event.events = events;
+	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, socket_fd, &event) < 0){
+		std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+
 int Webserver::epoll_wait_util(struct epoll_event* events){
 	//EPOLL_WAIT:
 	int epoll_num_ready_events = epoll_wait(this->_epoll_fd, events, this->_epoll_event_count, -1); //TODO : check the parameters
@@ -212,39 +224,16 @@ int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	if (client->get_Request("method") == "GET"){
-		if (client->handle_get_request() == SUCCESS){
-			//TODO: Create function to modify epoll event. Should this even return 1?
-			struct epoll_event event;
-			event.data.fd = client_fd;
-			event.events = EPOLLOUT;
-			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
-				std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
-				return 1;
-			}
-		}
+		if (client->handle_get_request() == SUCCESS)
+			modifyEpollEvent(client_fd, EPOLLOUT);
 	}
 	else if (client->get_Request("method") == "POST"){
-		if (client->handle_post_request() == SUCCESS){
-			//TODO: Create function to modify epoll event. Should this even return 1?
-			struct epoll_event event;
-			event.data.fd = client_fd;
-			event.events = EPOLLOUT;
-			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
-				std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
-				return 1;
-			}
-		}
+		if (client->handle_post_request() == SUCCESS)
+			modifyEpollEvent(client_fd, EPOLLOUT);
 	}
 	// else if (client->get_Request("method") == "DELETE"){
-	// 	if (client->handle_delete_request() == SUCCESS){
-		//TODO: Create function to modify epoll event. Should this even return 1?
-		// struct epoll_event event;
-		// event.data.fd = client_fd;
-		// event.events = EPOLLOUT;
-		// if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0){
-		// 	std::cout << RED << "Error changing EPOLLIN to EPOLLOUT for client: " << event.data.fd << std::endl;
-		// 	return 1;
-		// }
+	// 	if (client->handle_delete_request() == SUCCESS)
+	//		 modifyEpollEvent(client_fd, EPOLLOUT);
 	//}
 	//}
 	//else

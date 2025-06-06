@@ -30,6 +30,7 @@ class Webserver{
 		int addServerSockets();
 		int addEpollFd(int new_connection_socket_fd, uint32_t events);
 		int removeEpollFd(int socket_fd, uint32_t events);
+		int modifyEpollEvent(int socket_fd, uint32_t events);
 		int epoll_wait_util(struct epoll_event* events);
 
 		//Server methods
