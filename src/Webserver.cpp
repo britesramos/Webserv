@@ -165,7 +165,6 @@ int Webserver::main_loop(){
 						
 						int result = client->handle_cgi_response(*client->get_cgi());
 						if (result == 1) {
-						removeEpollFd(this->_epoll_fd, 0); //TODO: Check if return error.
 						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 
@@ -179,8 +178,7 @@ int Webserver::main_loop(){
 							}
 							else if (result == -1) {
 								std::cerr << RED << "Error reading from CGI pipe" << std::endl;
-								exit(1);  // test
-								// handle error here 502, it will be handle in the end? or it will send the error here?
+								client->set_error_code("502");
 							}
 						// }
 						// else if (EPOLLOUT)
