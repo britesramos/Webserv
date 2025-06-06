@@ -39,6 +39,7 @@ class Client {
 	private:
 		int												_Client_socket; //socket descriptor
 		std::string										_error_code;
+		std::string										_request_buffer;
 		std::unordered_map<std::string, std::string>	_Client_RequestMap; //Request
 		std::string										_response; //Response to be sent to the client
 		ServerConfig&									_server_config; //Server configuration for the client
@@ -55,10 +56,10 @@ class Client {
 
 		//Parsing methods:
 		int getpos(std::string str, std::string delimiter, int start);
-		int parseClientRequest(std::string request);
-		int parse_firstline(std::string request);
-		int parse_header(std::string request);
-		int parse_body(std::string request);
+		int parseClientRequest();
+		int parse_firstline();
+		int parse_header();
+		int parse_body();
 
 		//Building response methods:
 		int handle_get_request();
@@ -83,6 +84,7 @@ class Client {
 		bool get_isCgi();
 		int get_cgiOutputfd();
 		Cgi* get_cgi();
+		std::string get_requestBuffer();
 
 		//Setters
 		void set_Client_socket(int socket_fd);
@@ -91,4 +93,6 @@ class Client {
 		void set_isCgi(bool value);
 		void set_cgiOutputfd(int fd);
 		void set_cgi(Cgi* cgi);
+		void appendToBufferRequest(std::string to_append);
+		void clearBuffer();
 };

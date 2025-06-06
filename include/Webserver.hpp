@@ -7,6 +7,7 @@
 #include <sys/epoll.h>
 #include "../include/Cgi.hpp"
 #include "../include/Location.hpp"
+#include <fcntl.h>
 
 #define SUCCESS 0
 #define FAIL 1
@@ -18,7 +19,7 @@ class Webserver{
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
 		// std::unordered_map<int, std::string> client_response_map; //or in each client. This way we dont need to cleand this map as well.
-		std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map; //Map to store CGI file descriptors and their corresponding clients
+		// std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map; //Map to store CGI file descriptors and their corresponding clients
 		//timer.
 
 	public:
@@ -48,7 +49,7 @@ class Webserver{
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
 		// int handle_error(std::shared_ptr<Client>& client);
 		std::string build_header(std::string body);
-		void close_connection(std::shared_ptr<Client>& client);
+		void close_connection(int connection_fd);
 
 		//Debug methods
 		void printServerFDs() const;
@@ -62,7 +63,7 @@ class Webserver{
 
 		int get_epoll_fd() const;
 
-		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
+		// std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
 
 		//Clean_up_method
 		void clean_up();

@@ -6,24 +6,24 @@
 
 Webserver* g_webserver_ptr = NULL;
 
-void interrupt_helper(int sig)
-{
-	std::cout << "\n";
-	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
-	if (g_webserver_ptr)
-		g_webserver_ptr->clean_up();
-	exit(sig + 128);
-}
+// void interrupt_helper(int sig)
+// {
+// 	std::cout << "\n";
+// 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
+// 	if (g_webserver_ptr)
+// 		g_webserver_ptr->clean_up();
+// 	exit(sig + 128);
+// }
 
 int main(int argc, char **argv)
 {
 	//---------------------------------------------------------------------------------//
-	// function to handle Signal - Ctrl
-	struct sigaction signalInterrupter;
-	signalInterrupter.sa_handler = interrupt_helper;
-	sigemptyset(&signalInterrupter.sa_mask);
-	signalInterrupter.sa_flags = 0;
-	sigaction(SIGINT, &signalInterrupter, 0);
+	// // function to handle Signal - Ctrl
+	// struct sigaction signalInterrupter;
+	// signalInterrupter.sa_handler = interrupt_helper;
+	// sigemptyset(&signalInterrupter.sa_mask);
+	// signalInterrupter.sa_flags = 0;
+	// sigaction(SIGINT, &signalInterrupter, 0);
 	//---------------------------------------------------------------------------------//
 	if (argc <= 2)
 	{

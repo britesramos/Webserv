@@ -9,9 +9,9 @@ Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket
 
 Client::~Client(){
 	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl; //Should add some kind of client identifier (Socket FD?);
-	if (this->_Client_socket != -1)
-		close(this->_Client_socket);
-	delete this->cgi;
+	// if (this->_Client_socket != -1)
+	// 	close(this->_Client_socket);
+	// delete this->cgi;
 }
 
 // Client::Client(const Client& other){
@@ -27,6 +27,7 @@ Client& Client::operator=(const Client& other){
 	{
 		this->_Client_socket = other._Client_socket;
 		this->_error_code = other._error_code;
+		this->_request_buffer = other._request_buffer;
 		this->_Client_RequestMap = other._Client_RequestMap;
 		this->_response = other._response;
 		this->_server_config = other._server_config;
@@ -51,12 +52,12 @@ int Client::getpos(std::string str, std::string delimiter, int start){
 // Ex: GET /index.html HTTP/1.1
 // Ex: POST /index.html HTTP/1.1
 // Ex: DELETE /index.html HTTP/1.1
-int Client::parse_firstline(std::string request){
+int Client::parse_firstline(){
 	//Find the first line of the request:
-	int pos = getpos(request, "\r\n", 0);
+	int pos = getpos(this->_request_buffer, "\r\n", 0);
 	if (pos == -1)
 		return -1;
-	std::string first_line = request.substr(0, pos);
+	std::string first_line = this->_request_buffer.substr(0, pos);
 	//Find the method, url_path and http_version:
 	int pos1 = getpos(first_line, " ", 0);
 	if (pos1 == -1)
@@ -73,17 +74,17 @@ int Client::parse_firstline(std::string request){
 	return 0;
 }
 
-int Client::parse_header(std::string request){
+int Client::parse_header(){
 	//Find the start position of the header:
-	int header_start = getpos(request, "\r\n", 0) + 2;
+	int header_start = getpos(this->_request_buffer, "\r\n", 0) + 2;
 	if (header_start == -1)
 	return -1;
 	//Find the end position of the header:
-	int header_end = getpos(request, "\r\n\r\n", 0);
+	int header_end = getpos(this->_request_buffer, "\r\n\r\n", 0);
 	if (header_end == -1)
 		return -1;
 	//Get the header:
-	std::string header = request.substr(header_start, header_end - header_start);
+	std::string header = this->_request_buffer.substr(header_start, header_end - header_start);
 	// printf("Header: %s\n", header.c_str());
 	//Split the header into lines + Loop through splited head and assign key (before ":") and value (after ":") to the map
 	size_t pos = 0;
@@ -104,33 +105,33 @@ int Client::parse_header(std::string request){
 	return 0;
 }
 
-int Client::parse_body(std::string request){
+int Client::parse_body(){
 	//Find the start position of the body:
-	int body_start = getpos(request, "\r\n\r\n", 0) + 4;
+	int body_start = getpos(this->_request_buffer, "\r\n\r\n", 0) + 4;
 	if (body_start == -1)
 	return -1;
 	//Get the body (everything after the header):
-	std::string body = request.substr(body_start);
+	std::string body = this->_request_buffer.substr(body_start);
 	this->_Client_RequestMap["body"] = body;
 	// printf("body: %s\n", body.c_str()); //temp
 	return 0;
 }
 
-int Client::parseClientRequest(std::string request){
-	if (parse_firstline(request) < 0)
+int Client::parseClientRequest(){
+	if (parse_firstline() < 0)
 	{
 		std::cerr << RED << "Error parsing first line of request" << std::endl;
 		return -1;
 	}
-	if (parse_header(request) < 0)
+	if (parse_header() < 0)
 	{
 		std::cerr << RED << "Error parsing header of request" << std::endl;
 		return -1;
 	}
 	//check chucked transfer encoding
-	if (request.find("POST") != std::string::npos)
+	if (this->_request_buffer.find("POST") != std::string::npos)
 	{
-		if (parse_body(request) < 0)
+		if (parse_body() < 0)
 		{
 			std::cerr << RED << "Error parsing body of request" << std::endl;
 			return -1;
@@ -144,6 +145,7 @@ int Client::parseClientRequest(std::string request){
 int Client::handle_get_request(){
 	std::string response;
 	std::string url_path = this->get_Request("url_path");
+	std::cout << "HEEEEEEEEEEEEELO!" << std::endl; //temp
 	if (is_method_allowed(url_path, "GET") == true){
 		//1)Build response:
 		std::cout << "GET request for: " << url_path << std::endl;
@@ -399,6 +401,10 @@ Cgi* Client::get_cgi()
 	return this->cgi;
 }
 
+std::string Client::get_requestBuffer(){
+	return this->_request_buffer;
+}
+
 //***Setters***//
 void Client::set_Client_socket(int socket_fd){
 	this->_Client_socket = socket_fd;
@@ -423,4 +429,12 @@ void Client::set_cgiOutputfd(int fd)
 void Client::set_cgi(Cgi* cgi)
 {
 	this->cgi = cgi;
+}
+
+void Client::appendToBufferRequest(std::string to_append){
+	this->_request_buffer += to_append;
+}
+
+void Client::clearBuffer(){
+	this->_request_buffer = "";
 }

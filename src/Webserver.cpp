@@ -90,7 +90,7 @@ int Webserver::epoll_wait_util(struct epoll_event* events){
 		std::cerr << RED << "Error waiting for epoll events" << std::endl;
 		return -1;
 	}
-	std::cout << GREEN << "				Number of ready events: " << epoll_num_ready_events << std::endl;
+	std::cout << GREEN << "			Number of ready events: " << epoll_num_ready_events << std::endl;
 	return epoll_num_ready_events;
 }
 
@@ -117,14 +117,16 @@ int Webserver::main_loop(){
 			break ;
 		}
 		//EPOLL_WAIT:
-		std::cout << GREEN << "\n\n=============== !!! EPOLL_WAIT TIME !!! ===============" << std::endl;
+		std::cout << GREEN << "\n\n=======================================================\n=============== !!! EPOLL_WAIT TIME !!! ===============\n=======================================================" << std::endl;
 		struct epoll_event events[this->_epoll_event_count];
 		int epoll_num_ready_events = epoll_wait_util(events);
 		if (epoll_num_ready_events == -1)
 			return 1;
 		//PROCESSING EVENTS:
+		std::cout << GREEN << "\n\n=============== !!! PROCESSING EVENTS !!! ===============" << std::endl;
+
 		for (int i = 0; i < epoll_num_ready_events; ++i){
-			std::cout << "Event fd: " << events[i].data.fd << std::endl;
+			std::cout << "Event fd: " << events[i].data.fd << ", Events: " << events[i].events << std::endl;
 			//If the socket fd is the server socket fd there is a new connection:
 			if (is_server_fd(events[i].data.fd) == true){
 				if (accept_connection(this->_servers[i]) == 1)
@@ -133,69 +135,60 @@ int Webserver::main_loop(){
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
 			else {
 					// CGI
-					if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
-					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
+					// if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
+					// std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
 
-					// Read CGI response
+					// // Read CGI response
 
-						//EPOLLIN you read from CGI
-						// if (events[i].events & EPOLLIN)
-						// {
-						// 	if (client->handle_cgi_response(*client->get_cgi()) == 0) {
-						// 		// Remove CGI FD from epoll
-						// 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-						// 		close(events[i].data.fd); // Optional: close pipe if you're done with it
+					// 	//EPOLLIN you read from CGI
+					// 	// if (events[i].events & EPOLLIN)
+					// 	// {
+					// 	// 	if (client->handle_cgi_response(*client->get_cgi()) == 0) {
+					// 	// 		// Remove CGI FD from epoll
+					// 	// 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+					// 	// 		close(events[i].data.fd); // Optional: close pipe if you're done with it
 	
-						// 		// Now modify the client FD to EPOLLOUT so response can be sent
-						// 		struct epoll_event event;
-						// 		event.events = EPOLLOUT;
-						// 		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
-						// 			std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
-						// 			return 1;
-						// 		}
+					// 	// 		// Now modify the client FD to EPOLLOUT so response can be sent
+					// 	// 		struct epoll_event event;
+					// 	// 		event.events = EPOLLOUT;
+					// 	// 		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+					// 	// 			std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
+					// 	// 			return 1;
+					// 	// 		}
 
-						// } else if (events[i].events & EPOLLOUT)
-						// {
-						// 	//POST, you are going to send the body of your request to the CGI and then once you are done sending you change the status of EPOLL to EPOLLIN so you can read from the cgi and create a response for the client
-						// }
-						//EPOLLOUT you write the post body
+					// 	// } else if (events[i].events & EPOLLOUT)
+					// 	// {
+					// 	// 	//POST, you are going to send the body of your request to the CGI and then once you are done sending you change the status of EPOLL to EPOLLIN so you can read from the cgi and create a response for the client
+					// 	// }
+					// 	//EPOLLOUT you write the post body
 
-						//if it is POST this will not work
-						// }
+					// 	//if it is POST this will not work
+					// 	// }
 						
-						int result = client->handle_cgi_response(*client->get_cgi());
-						if (result == 1) {
-						removeEpollFd(this->_epoll_fd, 0); //TODO: Check if return error.
-						close(events[i].data.fd);
-						this->cgi_fd_to_client_map.erase(events[i].data.fd);
+					// 	int result = client->handle_cgi_response(*client->get_cgi());
+					// 	if (result == 1) {
+					// 	removeEpollFd(events[i].data.fd, 0); //TODO: Check if return error.
+					// 	close(events[i].data.fd);
+					// 	this->cgi_fd_to_client_map.erase(events[i].data.fd);
 
-						struct epoll_event event;
-						event.data.fd = client->get_Client_socket();
-						event.events = EPOLLOUT;
-						if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
-							perror("epoll_ctl EPOLLOUT");
-							return 1;
-						}
-					}
-					else if (result == -1) {
-						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
-						exit(1);  // test
-						// handle error here 502, it will be handle in the end? or it will send the error here?
-					}
-					}
+					// 	modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+					// }
+					// else if (result == -1) {
+					// 	std::cerr << RED << "Error reading from CGI pipe" << std::endl;
+					// 	client->set_error_code("502");
+					// }
+					// }
 				//client
-				else if (events[i].events & EPOLLIN){
-					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
+				if (events[i].events & EPOLLIN){
+					std::cout << GREEN << "EPOLLIN event for client fd: " << events[i].data.fd << std::endl;
 					if (process_request(events[i].data.fd) == -1)
 						break ;
 				}
 				else if (events[i].events & EPOLLOUT){
-					std::cout << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
+					std::cout << GREEN << "EPOLLOUT event for client fd: " << events[i].data.fd << std::endl;
 					send_response(events[i].data.fd);
-					Server* server = getServerBySocketFD(this->client_server_map.find(events[i].data.fd)->second);
-					std::shared_ptr<Client>& client = server->getclient(events[i].data.fd);
 					std::cout << GREEN << "Closing connection for client fd: " << events[i].data.fd << std::endl;
-					close_connection(client);
+					close_connection(events[i].data.fd);
 				}
 			}
 		}
@@ -224,8 +217,9 @@ int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	if (client->get_Request("method") == "GET"){
-		if (client->handle_get_request() == SUCCESS)
+		if (client->handle_get_request() == SUCCESS){
 			modifyEpollEvent(client_fd, EPOLLOUT);
+		}
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
@@ -258,62 +252,57 @@ int Webserver::process_request(int client_fd){
 		std::cerr << "Invalid client_fd: " << client_fd << std::endl;
 		return -1;
 	}
+	int this_client_server = this->client_server_map.find(client_fd)->second;
+	std::cout << "this_client_server: " << this_client_server << std::endl;
+	std::shared_ptr<Client>& client = getServerBySocketFD(this_client_server)->getclient(client_fd);
+	
 	std::cout << GREEN << "\n====== Processing Client: " << client_fd << " ======" << std::endl;
 	int bytes_received = 0;
 	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
 	std::cout << "Bytes received: " << bytes_received << std::endl;
-	if (bytes_received <= 0)
+	if (bytes_received < 0) //An error ocurred while recv().
 	{
-		if (bytes_received == 0)
-			std::cout << "Client disconnected: " << client_fd << std::endl;
-		else{
-			std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
-		}
-		//TODO: To be handle differentely. Client should be set with an error. And latter on build a error response.
-		//Remove client from epoll:
-		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-		//Remove client from clients map:
-		for (size_t i = 0; i < this->_servers.size(); ++i){
-			if (this->_servers[i].removeClient(client_fd) == 0){
-				return -1;
-			}
-		}
+		std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
+		client->set_error_code("400");
 		return 1;
 	}
-	std::string request;
-	request += buffer;
-	std::cout << "REQUEST: " << request << std::endl; //temporary, should be removed
-	//Parse client request into currect client object:
-	int this_client_server = this->client_server_map.find(client_fd)->second;
-	std::cout << "this_client_server: " << this_client_server << std::endl;
-	std::shared_ptr<Client>& client = getServerBySocketFD(this_client_server)->getclient(client_fd);
-	client->parseClientRequest(request);
-	if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
-	{
-		Cgi *cgi = new Cgi();
-		client->set_cgi(cgi);
-		std::cout << "CGI response" << std::endl;
-		client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
-		client->get_cgi()->run_cgi(*client);
-		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
-		if (cgi_out_fd == -1)
-		{
-			std::cout << RED << "Error getting CGI out fd" << std::endl;
-			return 1;
-		}
-		std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
-		client->set_cgiOutputfd(cgi_out_fd);
-		this->set_cgi_fd_to_client_map(cgi_out_fd, client);
-		if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
-		{
-			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
-			return 1;
-		}
-		client->set_isCgi(true);
-	}
-	else
-		build_response(client_fd); // this should be inside? 
+	client->appendToBufferRequest(std::string(buffer, bytes_received));
+	std::cout << RED << "BUUUUUUUUUFFFFFFEEEER: " << client->get_requestBuffer() << std::endl; //Temp
+	if ((client->get_requestBuffer().find("POST") != std::string::npos) & (bytes_received != 0))
+		return 0;
+	else {//Ready to process request. Received the entire request.
+		std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
+		//Parse client request into correct client object:
+		client->parseClientRequest();
+		// if (client->get_Request("Content-Leght") == client->get_requestBuffer().size())
+		//TODO:DUDA:Clean up cgi.
+		// if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
+		// {
+		// 	Cgi *cgi = new Cgi();
+		// 	client->set_cgi(cgi);
+		// 	std::cout << "CGI response" << std::endl;
+		// 	client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
+		// 	client->get_cgi()->run_cgi(*client);
+		// 	int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
+		// 	if (cgi_out_fd == -1)
+		// 	{
+		// 		std::cout << RED << "Error getting CGI out fd" << std::endl;
+		// 		return 1;
+		// 	}
+		// 	std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
+		// 	client->set_cgiOutputfd(cgi_out_fd);
+		// 	this->set_cgi_fd_to_client_map(cgi_out_fd, client);
+		// 	if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
+		// 	{
+		// 		std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
+		// 		return 1;
+		// 	}
+		// 	client->set_isCgi(true);
+		// }
+		// else
+			build_response(client_fd);
+	} 
 	return 0;
 }
 
@@ -332,6 +321,7 @@ int Webserver::accept_connection(Server& server){
 	else
 	{
 		std::cout << "====== Processing Connection: " << new_connection_socket_fd << " ======" << std::endl;
+		fcntl(new_connection_socket_fd, F_SETFL, O_NONBLOCK);
 		//ADD CLIENT TO EPOLL INTEREST LIST:
 		if (this->addEpollFd(new_connection_socket_fd, EPOLLIN) == 1){
 			std::cerr << RED << "Error adding new connection socket fd to epoll interest list" << std::endl;
@@ -349,13 +339,16 @@ int Webserver::accept_connection(Server& server){
 	return 0;
 }
 
-void Webserver::close_connection(std::shared_ptr<Client>& client){
+void Webserver::close_connection(int connection_fd){
+	Server* server = getServerBySocketFD(this->client_server_map.find(connection_fd)->second);
 	//1)Remove from epoll interest list:
-	removeEpollFd(client->get_Client_socket(), 0);
-	//2)Remove from client_server_map:
-	this->getServerBySocketFD(this->client_server_map.find(client->get_Client_socket())->second)->removeClient(client->get_Client_socket());
-	this->client_server_map.erase(client->get_Client_socket());
-
+	removeEpollFd(connection_fd, 0);
+	//2)Remove client from server unordered_map:
+	server->removeClient(connection_fd);
+	//3)Remove from client_server_map:
+	this->client_server_map.erase(connection_fd);
+	//4)Close fd:
+	close(connection_fd);
 }
 
 //Getters and Setters
@@ -415,18 +408,18 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 	return (locations[matched_prefix]);
 }
 
-std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
-{
-	if (this->cgi_fd_to_client_map.find(cgi_fd) != this->cgi_fd_to_client_map.end())
-	return this->cgi_fd_to_client_map[cgi_fd];
-	else
-	return nullptr;
-}
+// std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
+// {
+// 	if (this->cgi_fd_to_client_map.find(cgi_fd) != this->cgi_fd_to_client_map.end())
+// 	return this->cgi_fd_to_client_map[cgi_fd];
+// 	else
+// 	return nullptr;
+// }
 
-void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
-{
-	this->cgi_fd_to_client_map[cgi_fd] = client;
-}
+// void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
+// {
+// 	this->cgi_fd_to_client_map[cgi_fd] = client;
+// }
 
 void Webserver::clean_up(){
 	for (size_t i = 0; i < _servers.size(); ++i){
