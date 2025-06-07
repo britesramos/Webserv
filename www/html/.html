@@ -14,9 +14,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 20px 20px 0 20px;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     header {
@@ -120,23 +123,148 @@
       margin-bottom: 20px;
       text-align: center;
     }
+
+    .form-description {
+      text-align: center;
+      color: #6b4c4c;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .datetime-result {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #fff8f0;
+    }
+
+    .footer {
+      width: calc(100% + 40px);
+      margin-left: -20px;
+      padding: 20px;
+      background-color: #a05270;
+      color: #fff;
+      text-align: center;
+      margin-top: 40px;
+      box-shadow: 0 -4px 12px rgba(160, 82, 112, 0.2);
+    }
+
+    .footer p {
+      color: #fff;
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+
+    .footer-links {
+      margin-top: 10px;
+    }
+
+    .footer-link {
+      color: #fff8f0;
+      text-decoration: none;
+      padding: 5px 10px;
+      border: 1px solid #fff8f0;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      font-size: 0.9em;
+    }
+
+    .footer-link:hover {
+      background-color: #fff8f0;
+      color: #a05270;
+    }
+
+    .heart {
+      color: #fff;
+      animation: heartbeat 1.5s ease infinite;
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .floating-header {
+      position: fixed;
+      top: -60px;
+      left: 0;
+      width: 100%;
+      background-color: rgba(160, 82, 112, 0.95);
+      padding: 15px 30px;
+      transition: top 0.3s;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+    }
+
+    .floating-header.visible {
+      top: 0;
+    }
+
+    .floating-header h2 {
+      color: #fff;
+      margin: 0;
+      font-size: 1.5em;
+      font-weight: 500;
+    }
+
+    .unsubscribe-form {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .unsubscribe-form.active {
+      display: block;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .overlay.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Yarn Server</h1>
-    <p>Your webserver full of yarn and creativity.</p>
-  </header>
+  <div class="floating-header">
+    <h2>Yarn Server</h2>
+  </div>
+
+    <header>
+      <h1>Yarn Server</h1>
+      <p>Your webserver full of yarn and creativity.</p>
+    </header>
 
   <div class="image-container">
     <img src="../images/yarncrochet.jpg" alt="Yarn Bundles" />
   </div>
 
-    <button class="button" id="signInBtn">Sign In</button>
+  <button class="button" id="signInBtn">Join Our Yarn Community</button>
   
   <!-- Sign In Form -->
   <div class="form-container" id="signInForm">
-    <h2 class="form-title">Sign In</h2>
+    <h2 class="form-title">Welcome to Our Community!</h2>
+    <p class="form-description">Want to be part of our server and see nice yarn prices and patterns? Sign in</p>
     <form action="/signin" method="POST">
       <div class="form-group">
         <label for="firstName">First Name</label>
@@ -157,11 +285,170 @@
     </form>
   </div>
 
+  <!-- File Upload Form -->
+  <button class="button" id="uploadBtn">Share Your Pattern</button>
+  <div class="form-container" id="uploadForm">
+    <h2 class="form-title">Upload Your Pattern</h2>
+    <p class="form-description">Want to make your pattern part of our platform?</p>
+    <p class="form-description" style="color: #d87c88; font-weight: bold;">Upload here for approval! ✨</p>
+    <form action="/cgi-bin/upload.py" method="POST" enctype="multipart/form-data" onsubmit="window.location.href='/html/Success.html';">
+      <div class="form-group">
+        <label for="fileUpload">Choose your pattern</label>
+        <input type="file" id="fileUpload" name="fileUpload" required>
+      </div>
+      <button type="submit" class="button">Upload</button>
+    </form>
+  </div>
+
+  <!-- Date Time Section -->
+  <button class="button" id="dateTimeBtn">Would you like to chat?</button>
+  <div class="form-container" id="dateTimeContainer">
+    <h2 class="form-title">Let's Connect! 🧶</h2>
+    <p class="form-description">Want to chat about patterns and yarn? First, let's check our time zones so we can craft together!</p>
+    <div id="dateTimeResult" class="datetime-result"></div>
+  </div>
+
+  <div class="overlay"></div>
+  <div class="unsubscribe-form" id="unsubscribeForm">
+    <h2 class="form-title">Unsubscribe Options</h2>
+    <p class="form-description">What would you like to remove?</p>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="deleteAccount"> Delete my account
+      </label>
+    </div>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="deletePatterns"> Remove my patterns
+      </label>
+    </div>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="unsubscribeEmails"> Unsubscribe from emails
+      </label>
+    </div>
+    <button onclick="confirmUnsubscribe()" class="button">Confirm</button>
+    <button onclick="closeUnsubscribeForm()" class="button" style="background-color: #6b4c4c;">Cancel</button>
+  </div>
+
+  <div class="footer">
+    <p>Made with <span class="heart">♥</span> by Yarn Lovers</p>
+    <div class="footer-links">
+      <button onclick="showUnsubscribeForm()" class="footer-link" style="background: none; border: 1px solid #fff8f0; cursor: pointer;">Manage Subscription</button>
+    </div>
+  </div>
+
   <script>
-    // JavaScript to toggle the sign-in form
+    async function handleUnsubscribe() {
+      if (confirm('Are you sure you want to unsubscribe? This will delete your account and patterns.')) {
+        try {
+          const response = await fetch('/unsubscribe', {
+            method: 'DELETE',
+          });
+          if (response.ok) {
+            alert('You have been successfully unsubscribed.');
+            window.location.href = '/'; // Redirect to home page
+          } else {
+            alert('Failed to unsubscribe. Please try again later.');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('An error occurred while trying to unsubscribe.');
+        }
+      }
+    }
+
+    // Floating header logic
+    window.addEventListener('scroll', function() {
+      const header = document.querySelector('.floating-header');
+      if (window.scrollY > 100) {
+        header.classList.add('visible');
+      } else {
+        header.classList.remove('visible');
+      }
+    });
+
+    // Unsubscribe form logic
+    function showUnsubscribeForm() {
+      document.getElementById('unsubscribeForm').classList.add('active');
+      document.querySelector('.overlay').classList.add('active');
+    }
+
+    function closeUnsubscribeForm() {
+      document.getElementById('unsubscribeForm').classList.remove('active');
+      document.querySelector('.overlay').classList.remove('active');
+    }
+
+    async function confirmUnsubscribe() {
+      const form = document.getElementById('unsubscribeForm');
+      const options = {
+        account: form.querySelector('[name="deleteAccount"]').checked,
+        patterns: form.querySelector('[name="deletePatterns"]').checked,
+        emails: form.querySelector('[name="unsubscribeEmails"]').checked
+      };
+
+      if (!options.account && !options.patterns && !options.emails) {
+        alert('Please select at least one option');
+        return;
+      }
+
+      try {
+        const response = await fetch('/unsubscribe', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(options)
+        });
+
+        if (response.ok) {
+          alert('Your changes have been processed successfully.');
+          window.location.href = '/';
+        } else {
+          alert('Failed to process your request. Please try again later.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+      }
+
+      closeUnsubscribeForm();
+    }
+
+    // JavaScript to toggle forms and handle date/time
     document.getElementById('signInBtn').addEventListener('click', function() {
       const form = document.getElementById('signInForm');
       form.classList.toggle('active');
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', function() {
+      const form = document.getElementById('uploadForm');
+      form.classList.toggle('active');
+    });
+
+    document.getElementById('dateTimeBtn').addEventListener('click', async function() {
+      const container = document.getElementById('dateTimeContainer');
+      const resultDiv = document.getElementById('dateTimeResult');
+      container.classList.toggle('active');
+      
+      if (container.classList.contains('active')) {
+        resultDiv.innerHTML = '<p style="color: #6b4c4c;">Loading...</p>';
+        try {
+          const response = await fetch('/cgi-bin/date_time.py');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.text();
+          if (data.includes('Error:')) {
+            resultDiv.innerHTML = data;
+          } else {
+            resultDiv.innerHTML = data;
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          resultDiv.innerHTML = '<p style="color: #d87c88;">Error fetching date/time. Please try again.</p>';
+        }
+      }
     });
   </script>
 </body>

@@ -1,17 +1,14 @@
 #!/usr/bin/python3
 
-import cgi
 import datetime
 
-# print("Content-type: text/html\n\n")
-print("<html><body style='text-align:center;'>")
-
-print("<h1 style='color: pink;'>This is the date and time now</h1>")
+# print("Content-type: text/html\n")
 
 x = datetime.datetime.now()
-print("<strong>", x.strftime("%c"), "</strong>")
-print("<br>")
-print("<br>")
-print("<a href=\"../www/html/.html\">Return home</a>")
-
-print("</body></html>")
+print(f'''
+<div style='text-align: center; color: #a05270;'>
+    <h3 style='margin-bottom: 15px;'>Current Date and Time:</h3>
+    <p style='font-size: 1.2em; color: #6b4c4c;'>{x.strftime("%c")}</p>
+    <p style='margin-top: 15px; font-size: 0.9em; color: #6b4c4c;'>Time Zone: {x.astimezone().tzname()}</p>
+</div>
+''')

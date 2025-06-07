@@ -216,7 +216,7 @@ int Client::handle_cgi_response(Cgi& cgi)
 		std::string header = build_header(cgi_buffer);
 		std::string full_response = status_line + header + cgi_buffer;
 
-		// std::cout << "Final CGI Response:\n" << full_response << std::endl;
+		std::cout << "Final CGI Response:\n" << full_response << std::endl;
 		this->_response = full_response;
 
 		// check for error in python! trash trash trash

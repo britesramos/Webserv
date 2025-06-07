@@ -165,19 +165,29 @@ int Webserver::main_loop(){
 					// 	//if it is POST this will not work
 					// 	// }
 						
-					// 	int result = client->handle_cgi_response(*client->get_cgi());
-					// 	if (result == 1) {
-					// 	removeEpollFd(events[i].data.fd, 0); //TODO: Check if return error.
-					// 	close(events[i].data.fd);
-					// 	this->cgi_fd_to_client_map.erase(events[i].data.fd);
+						int result = client->handle_cgi_response(*client->get_cgi());
+						if (result == 1) {
+						close(events[i].data.fd);
+						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 
-					// 	modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
-					// }
-					// else if (result == -1) {
-					// 	std::cerr << RED << "Error reading from CGI pipe" << std::endl;
-					// 	client->set_error_code("502");
-					// }
-					// }
+							struct epoll_event event;
+							event.data.fd = client->get_Client_socket();
+							event.events = EPOLLOUT;
+							if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
+								perror("epoll_ctl EPOLLOUT");
+								return 1;
+							}
+							}
+							else if (result == -1) {
+								std::cerr << RED << "Error reading from CGI pipe" << std::endl;
+								client->set_error_code("502");
+							}
+						// }
+						// else if (EPOLLOUT)
+						// {
+							
+						// }
+					}
 				//client
 				if (events[i].events & EPOLLIN){
 					std::cout << GREEN << "EPOLLIN event for client fd: " << events[i].data.fd << std::endl;
