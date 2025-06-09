@@ -28,18 +28,18 @@ class Cgi {
 		bool post;
 		bool del;
 		bool config_autoindex;
-		int code_status;
 	public:
 		Cgi();
 		~Cgi();
 
 		void start_cgi(Location location);
-		void set_code_status(int code);
-		int get_code_status() const;
 		int get_cgi_in(int pos);
 		int get_cgi_out(int pos);
 		void run_cgi(Client& client);
 		void creating_cgi_env(Client &client);
+		bool get_method_post() const;
+		bool get_method_del() const;
+		bool get_method_get() const;
 
 };
 

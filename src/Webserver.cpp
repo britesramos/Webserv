@@ -265,6 +265,15 @@ bool Webserver::processing_cgi(std::shared_ptr<Client>& client, int client_fd)
 		client->set_cgi(cgi);
 		std::cout << "CGI response" << std::endl;
 		client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
+		std::string method = client->get_Request("method");
+		if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
+		{
+			client->set_error_code("405");
+			modifyEpollEvent(client_fd, EPOLLOUT);
+			delete cgi;
+			return true;
+		}
+
 		client->get_cgi()->run_cgi(*client);
 		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
 		if (cgi_out_fd == -1)

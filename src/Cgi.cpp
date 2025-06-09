@@ -2,7 +2,6 @@
 
 Cgi::Cgi()
 {
-	this->code_status = 200;
 	this->del = false;
 	this->get = false;
 	this->post = false;
@@ -75,9 +74,23 @@ void Cgi::start_cgi(Location config)
 	// 	return ;
 	// }
 
-	if (pipe(cgi_in) == -1 || pipe(cgi_out) == -1)
+	if (this->post)
 	{
-		perror("Pipe");
+		if (pipe(this->cgi_in) == -1)
+		{
+			perror("Input Pipe");
+			return ;
+		}
+	}
+
+	if (pipe(cgi_out) == -1)
+	{
+		if (this->post)
+		{
+			close(this->cgi_in[READ]);
+			close(this->cgi_in[WRITE]);
+		}
+		perror("Output Pipe");
 		return ;
 	}
 }
@@ -85,6 +98,7 @@ void Cgi::start_cgi(Location config)
 
 void Cgi::run_cgi(Client& client)
 {
+	std::string method = client.get_Request("method");
 	pid_t pid;
 
 	pid = fork();
@@ -97,7 +111,7 @@ void Cgi::run_cgi(Client& client)
 	if (pid == 0)
 	{
 		//child
-		if (client.get_Request("method") == "POST" && this->post == true)
+		if (method == "POST" && this->post == true)
 		{
 			dup2(this->cgi_in[READ], STDIN_FILENO);
 			close(this->cgi_in[WRITE]);
@@ -119,7 +133,7 @@ void Cgi::run_cgi(Client& client)
 	else
 	{
 		//parent
-		if (client.get_Request("method") == "POST" && this->post == true)
+		if (method == "POST" && this->post == true)
 		{
 			close(this->cgi_in[READ]);
 			std::string body = client.get_Request("body");
@@ -147,12 +161,17 @@ void Cgi::run_cgi(Client& client)
 	}
 }
 
-	void Cgi::set_code_status(int code)
-	{
-		this->code_status = code;
-	}
+bool Cgi::get_method_del() const
+{
+	return (this->del);
+}
 
-	int Cgi::get_code_status() const
-	{
-		return (this->code_status);
-	}
+bool Cgi::get_method_get() const
+{
+	return (this->get);
+}
+
+bool Cgi::get_method_post() const
+{
+	return (this->post);
+}
