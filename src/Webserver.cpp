@@ -300,6 +300,14 @@ int Webserver::process_request(int client_fd){
 	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
 	std::cout << "Bytes received: " << bytes_received << std::endl;
+
+	if (bytes_received == 0) // Connection closed by client
+	{
+		std::cout << "Client closed connection: " << client_fd << std::endl;
+		close_connection(client_fd);
+		return 0;
+	}
+
 	if (bytes_received < 0) //An error ocurred while recv().
 	{
 		std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
@@ -337,29 +345,6 @@ int Webserver::process_request(int client_fd){
 			std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
 			return 0;
 		}
-		// if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
-		// {
-		// 	Cgi *cgi = new Cgi();
-		// 	client->set_cgi(cgi);
-		// 	std::cout << "CGI response" << std::endl;
-		// 	client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
-		// 	client->get_cgi()->run_cgi(*client);
-		// 	int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
-		// 	if (cgi_out_fd == -1)
-		// 	{
-		// 		std::cout << RED << "Error getting CGI out fd" << std::endl;
-		// 		return 1;
-		// 	}
-		// 	std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
-		// 	client->set_cgiOutputfd(cgi_out_fd);
-		// 	this->set_cgi_fd_to_client_map(cgi_out_fd, client);
-		// 	if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
-		// 	{
-		// 		std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
-		// 		return 1;
-		// 	}
-		// 	client->set_isCgi(true);
-		// }
 		else
 			build_response(client_fd);
 	} 

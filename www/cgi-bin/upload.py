@@ -3,7 +3,7 @@
 import cgi
 import os
 
-print("Content-type: text/html\n\n")
+# print("Content-type: text/html\n\n")
 
 form = cgi.FieldStorage()
 fileitem = form['image']
@@ -23,11 +23,7 @@ except Exception as e:
 
 
 
-    print(f"<h1>Upload successful</h1><p>Saved as {filename}</p>")
+#     print(f"<h1>Upload successful</h1><p>Saved as {filename}</p>")
 
 
-print("<br>")
-print("<br>")
-print("<a href=\"../home_page.html\">Return home</a>")
-
-print("</body></html>")
+# print("</body></html>")

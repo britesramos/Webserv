@@ -2,7 +2,7 @@
 
 import os
 
-print("Content-type:text/html\r\n\r\n)
+# print("Content-type:text/html\r\n\r\n)
 
 if os.path.exists("demofile.txt"):
   os.remove("demofile.txt")
