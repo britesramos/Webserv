@@ -300,6 +300,12 @@ int Webserver::process_request(int client_fd){
 	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
 	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
 	std::cout << "Bytes received: " << bytes_received << std::endl;
+	if (bytes_received == 0)
+	{
+		std::cout << "Client closed connection: " << client_fd << std::endl;
+		close_connection(client_fd);
+		return 0;
+	}
 	if (bytes_received < 0) //An error ocurred while recv().
 	{
 		std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
@@ -307,7 +313,6 @@ int Webserver::process_request(int client_fd){
 		return 1;
 	}
 	client->appendToBufferRequest(std::string(buffer, bytes_received));
-	std::cout << RED << "BUUUUUUUUUFFFFFFEEEER: " << client->get_requestBuffer() << std::endl; //Temp
 	if (client->get_requestBuffer().find("POST") != std::string::npos && bytes_received != 0) {
         // Check if we've received the complete POST data
         size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
