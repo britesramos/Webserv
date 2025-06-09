@@ -70,7 +70,6 @@ int Server::addClient(int new_connection_socket_fd){
 int Server::removeClient(int client_fd){
 	auto it = _clients.find(client_fd);
 	if (it != _clients.end()) {
-		std::cout << "HELLOOOOOOOO!" << std::endl;
 		_clients.erase(it);
 		std::cout << GREEN << "Client removed from clients map: " << client_fd << std::endl;
 		return 0;

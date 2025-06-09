@@ -279,8 +279,25 @@ int Webserver::process_request(int client_fd){
 	}
 	client->appendToBufferRequest(std::string(buffer, bytes_received));
 	std::cout << RED << "BUUUUUUUUUFFFFFFEEEER: " << client->get_requestBuffer() << std::endl; //Temp
-	if ((client->get_requestBuffer().find("POST") != std::string::npos) & (bytes_received != 0))
-		return 0;
+	if (client->get_requestBuffer().find("POST") != std::string::npos && bytes_received != 0) {
+        // Check if we've received the complete POST data
+        size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
+        if (content_length_pos != std::string::npos) {
+            size_t content_length = std::stoi(client->get_requestBuffer().substr(content_length_pos + 16));
+            size_t header_end = client->get_requestBuffer().find("\r\n\r\n");
+            
+            if (header_end != std::string::npos) {
+                size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
+                if (body_length >= content_length) {
+                    // We have received all the POST data, proceed to build response
+                    client->parseClientRequest();
+                    build_response(client_fd);
+                }
+                return 0; // Still receiving data
+            }
+        }
+        return 0; // Still receiving headers
+    }
 	else {//Ready to process request. Received the entire request.
 		std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
 		//Parse client request into correct client object:
