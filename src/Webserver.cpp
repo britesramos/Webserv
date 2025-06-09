@@ -315,7 +315,6 @@ int Webserver::process_request(int client_fd){
 		return 1;
 	}
 	client->appendToBufferRequest(std::string(buffer, bytes_received));
-	std::cout << RED << "BUUUUUUUUUFFFFFFEEEER: " << client->get_requestBuffer() << std::endl; //Temp
 	if (client->get_requestBuffer().find("POST") != std::string::npos && bytes_received != 0) {
         // Check if we've received the complete POST data
         size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
