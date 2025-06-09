@@ -173,45 +173,16 @@ int Client::handle_post_request(){
 int Client::handle_cgi_response(Cgi& cgi)
 {
 	std::cout << "		Handling CGI response..." << std::endl;
-	// char buffer[1024];
-	// std::string response_body;
-	// ssize_t bytes_read;
-
-
-	// while ((bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1)) > 0) {
-	// 	buffer[bytes_read] = '\0';
-	// 	response_body += buffer;
-	// }
-	// if (bytes_read < 0) {
-	// 	perror("read");
-	// 	return -1;
-	// }
-	// if(response_body.empty()) {
-	// 	std::cerr << RED << "Error: CGI response body is empty." << std::endl;
-	// 	exit(1);
-	// 	this->set_error_code("500");
-	// 	return -1;
-	// }
-
-	// std::string status_line = build_status_line("200", "OK");
-	// std::string header = build_header(response_body);
-	// std::string response = status_line + header;
-	// response += response_body;
-
-	// std::cout << "Response: " << response << std::endl;
-
-	// this->_response = response;
-	// return 0;
-
 	char buffer[1024];
 	ssize_t bytes_read;
-
+	
 	bytes_read = read(cgi.get_cgi_out(READ), buffer, sizeof(buffer) - 1);
 	if (bytes_read < 0) {
 		perror("read");
 		return -1;
 	}
 	else if (bytes_read == 0) {
+		std::cout << "CGI process has finished reading output." << std::endl;
 		std::string status_line = build_status_line("200", "OK");
 		std::string header = build_header(cgi_buffer);
 		std::string full_response = status_line + header + cgi_buffer;
