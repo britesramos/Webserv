@@ -128,7 +128,6 @@ int Client::parseClientRequest(){
 		std::cerr << RED << "Error parsing header of request" << std::endl;
 		return -1;
 	}
-	//check chucked transfer encoding
 	if (this->_request_buffer.find("POST") != std::string::npos)
 	{
 		if (parse_body() < 0)
@@ -145,7 +144,6 @@ int Client::parseClientRequest(){
 int Client::handle_get_request(){
 	std::string response;
 	std::string url_path = this->get_Request("url_path");
-	std::cout << "HEEEEEEEEEEEEELO!" << std::endl; //temp
 	if (is_method_allowed(url_path, "GET") == true){
 		//1)Build response:
 		std::cout << "GET request for: " << url_path << std::endl;
@@ -165,6 +163,7 @@ int Client::handle_get_request(){
 int Client::handle_post_request(){
 	std::string response;
 	std::string url_path = this->get_Request("url_path");
+	std::cout << "URL_PATH:::: " << url_path << std::endl;
 	if (is_method_allowed(url_path, "POST") == true)
 		handle_success();
 	return 0;
