@@ -97,8 +97,11 @@ void Cgi::run_cgi(Client& client)
 	if (pid == 0)
 	{
 		//child
-		// dup2(this->cgi_in[READ], STDIN_FILENO);
-		// close(this->cgi_in[WRITE]);
+		if (client.get_Request("method") == "POST" && this->post == true)
+		{
+			dup2(this->cgi_in[READ], STDIN_FILENO);
+			close(this->cgi_in[WRITE]);
+		}
 		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
 		dup2(this->cgi_out[WRITE], STDERR_FILENO); // adding error from script to the pipe, all the errors are going to print on the browser x.x
 		close(this->cgi_out[WRITE]);
@@ -116,7 +119,14 @@ void Cgi::run_cgi(Client& client)
 	else
 	{
 		//parent
-		close(this->cgi_out[WRITE]); // TODO: return pipe for the write function 
+		if (client.get_Request("method") == "POST" && this->post == true)
+		{
+			close(this->cgi_in[READ]);
+			std::string body = client.get_Request("body");
+			write(this->cgi_in[WRITE], body.c_str(), body.size());
+			close(this->cgi_in[WRITE]);
+		}
+		close(this->cgi_out[WRITE]);
 
 		client.set_error_code("200");
 		int status;
