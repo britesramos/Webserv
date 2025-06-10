@@ -19,7 +19,8 @@ class Webserver{
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
 		// std::unordered_map<int, std::string> client_response_map; //or in each client. This way we dont need to cleand this map as well.
-		std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map; //Map to store CGI file descriptors and their corresponding clients timer.
+		std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map;        // For CGI output (read)
+		std::map<int, std::shared_ptr<Client>> cgi_input_fd_to_client_map;  // For CGI input (write)
 
 	public:
 		Webserver();
@@ -43,6 +44,7 @@ class Webserver{
 		int send_response(int client_fd);
 
 		void set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client);
+		void set_cgi_input_fd_to_client_map(int cgi_in_fd, std::shared_ptr<Client> client);
 
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
@@ -63,6 +65,7 @@ class Webserver{
 		int get_epoll_fd() const;
 
 		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
+		std::shared_ptr<Client> get_client_by_cgi_input_fd(int cgi_in_fd);
 		bool processing_cgi(std::shared_ptr<Client>& client, int client_fd);
 		//Clean_up_method
 		void clean_up();

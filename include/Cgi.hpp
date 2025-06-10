@@ -40,6 +40,7 @@ class Cgi {
 		bool get_method_post() const;
 		bool get_method_del() const;
 		bool get_method_get() const;
+		bool get_config_autoindex() const;
 
 };
 

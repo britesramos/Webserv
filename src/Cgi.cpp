@@ -22,7 +22,7 @@ int Cgi::get_cgi_out(int pos)
 	return this->cgi_out[pos];
 }
 
-void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
+void Cgi::creating_cgi_env(Client &client)
 {
 	std::string method = client.get_Request("method");
 	this->tmp_env.push_back("REQUEST_METHOD=" + method);
@@ -32,26 +32,21 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 	this->tmp_env.push_back("PATH_INFO=" + client.get_Request("url_path"));
 	this->tmp_env.push_back("QUERY_STRING=" + client.get_Request("query_string"));
 
-	if (method == "POST" && this->post == true)
+	if (method == "POST" && this->post == true) // TODO: CHECK is receiving the content correct
 	{
+		std::cout << "			POST method detected, adding POST specific environment variables." << std::endl;
 		std::string content_lenght = client.get_Request("content_length");
-		if (!content_lenght.empty())
-		{
-			this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
-		}
+		this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
 		std::string content_type = client.get_Request("content_type");
-		if (!content_type.empty()) {
 			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
-		}
 	}
 
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
 
-	// for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
-	// 	std::cout << "				" << this->env[i] << std::endl;
-	// }
+	for (size_t i = 0; i < this->env.size(); ++i)
+    std::cerr <<  YELLOW <<"			CGI ENV: " << this->env[i] << std::endl;
 }
 
 void Cgi::start_cgi(Location config)
@@ -68,11 +63,6 @@ void Cgi::start_cgi(Location config)
 			this->del = true;
 	}
 	this->config_autoindex = config.getAutoindex();
-	// if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
-	// {
-	// 	client.set_error_code("404");
-	// 	return ;
-	// }
 
 	if (this->post)
 	{
@@ -114,10 +104,11 @@ void Cgi::run_cgi(Client& client)
 		if (method == "POST" && this->post == true)
 		{
 			dup2(this->cgi_in[READ], STDIN_FILENO);
+			close(this->cgi_in[READ]);
 			close(this->cgi_in[WRITE]);
 		}
 		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
-		dup2(this->cgi_out[WRITE], STDERR_FILENO); // adding error from script to the pipe, all the errors are going to print on the browser x.x
+		dup2(this->cgi_out[WRITE], STDERR_FILENO); // TODO: check this adding error from script to the pipe, all the errors are going to print on the browser x.x
 		close(this->cgi_out[WRITE]);
 		close(this->cgi_out[READ]);
 
@@ -134,12 +125,7 @@ void Cgi::run_cgi(Client& client)
 	{
 		//parent
 		if (method == "POST" && this->post == true)
-		{
 			close(this->cgi_in[READ]);
-			std::string body = client.get_Request("body");
-			write(this->cgi_in[WRITE], body.c_str(), body.size());
-			close(this->cgi_in[WRITE]);
-		}
 		close(this->cgi_out[WRITE]);
 
 		client.set_error_code("200");
@@ -174,4 +160,9 @@ bool Cgi::get_method_get() const
 bool Cgi::get_method_post() const
 {
 	return (this->post);
+}
+
+bool Cgi::get_config_autoindex() const
+{
+	return (this->config_autoindex);
 }

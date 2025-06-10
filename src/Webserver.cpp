@@ -138,39 +138,44 @@ int Webserver::main_loop()
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
 			else
 			{
-				// CGI
-				if (this->cgi_fd_to_client_map.count(events[i].data.fd))
-				{
+				// 1. Handle CGI input (write) FDs for POST body
+				if (this->cgi_input_fd_to_client_map.count(events[i].data.fd)) {
+					std::shared_ptr<Client> client = get_client_by_cgi_input_fd(events[i].data.fd);
+					std::string& buffer = client->get_cgiInputBuffer();
+					size_t written = client->get_cgiInputWritten();
+					int fd = client->get_cgiInputfd();
+
+					std::cout << YELLOW << "Writing to CGI: " << buffer.size() << " bytes, written so far: " << written << std::endl;
+					ssize_t n = write(fd, buffer.data() + written, buffer.size() - written);
+					if (n > 0) {
+						written += n;
+						std::cout << YELLOW << "write() returned: " << n << ", written now: " << written << ", buffer.size(): " << buffer.size() << std::endl;
+						client->set_cgiInputWritten(written);
+						if (written == buffer.size()) {
+						// Done writing POST body to CGI
+							removeEpollFd(fd, EPOLLOUT);
+							close(fd);
+							client->set_cgiInputfd(-1);
+							this->cgi_input_fd_to_client_map.erase(fd);
+							std::cout << YELLOW << "Finished writing POST body to CGI for client fd: " << client->get_Client_socket() << std::endl;
+						}
+					} else if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+						// Error handling
+						std::cerr << "write() failed, errno: " << errno << " (" << strerror(errno) << ")" << std::endl;
+						removeEpollFd(fd, EPOLLOUT);
+						close(fd);
+						client->set_cgiInputfd(-1);
+						this->cgi_input_fd_to_client_map.erase(fd);
+						// std::cerr << RED << "Error writing POST body to CGI for client fd: " << client->get_Client_socket() << std::endl;
+						// Set error code and prepare to send error response
+						client->set_error_code("502");
+						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+						std::cerr << RED << "Error writing POST body to CGI for client fd: " << client->get_Client_socket() << std::endl;
+					}
+				}
+				// 2. Handle CGI output (read)
+				else if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
 					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
-					std::cout << GREEN << "					Processing CGI response for client fd: " << client->get_Client_socket() << std::endl;
-
-					// Read CGI response
-
-						//EPOLLIN you read from CGI
-						// if (events[i].events & EPOLLIN)
-						// {
-						// 	if (client->handle_cgi_response(*client->get_cgi()) == 0) {
-						// 		// Remove CGI FD from epoll
-						// 		epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-						// 		close(events[i].data.fd); // Optional: close pipe if you're done with it
-	
-						// 		// Now modify the client FD to EPOLLOUT so response can be sent
-						// 		struct epoll_event event;
-						// 		event.events = EPOLLOUT;
-						// 		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_MOD, client->get_Client_socket(), &event) < 0) {
-						// 			std::cerr << "Failed to switch Cgi Client to EPOLLOUT" << std::endl;
-						// 			return 1;
-						// 		}
-
-						// } else if (events[i].events & EPOLLOUT)
-						// {
-						// 	//POST, you are going to send the body of your request to the CGI and then once you are done sending you change the status of EPOLL to EPOLLIN so you can read from the cgi and create a response for the client
-						// }
-						//EPOLLOUT you write the post body
-
-						//if it is POST this will not work
-						// }
-						
 					int result = client->handle_cgi_response(*client->get_cgi());
 					if (result == 1) {
 						close(events[i].data.fd);
@@ -185,7 +190,7 @@ int Webserver::main_loop()
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 					}
 				}
-				//client
+				// 3. Handle client socket (EPOLLIN/EPOLLOUT)
 				else if (events[i].events & EPOLLIN){
 					std::cout << GREEN << "EPOLLIN event for client fd: " << events[i].data.fd << std::endl;
 					if (process_request(events[i].data.fd) == -1)
@@ -273,6 +278,40 @@ bool Webserver::processing_cgi(std::shared_ptr<Client>& client, int client_fd)
 			delete cgi;
 			return true;
 		}
+		if ((method == "POST" && client->get_cgi()->get_method_post())) {
+			// int cgi_in_fd = client->get_cgi()->get_cgi_in(WRITE);
+			// client->set_cgiInputfd(cgi_in_fd);
+			// client->set_cgiInputBuffer(client->get_Request("body"));
+			// client->set_cgiInputWritten(0);
+			// set_cgi_input_fd_to_client_map(cgi_in_fd, client);
+			// addEpollFd(cgi_in_fd, EPOLLOUT);
+
+			    int cgi_in_fd = client->get_cgi()->get_cgi_in(WRITE);
+				client->set_cgiInputfd(cgi_in_fd);
+				client->set_cgiInputBuffer(client->get_Request("body"));
+				client->set_cgiInputWritten(0);
+
+				// 1. Fork/exec CGI child here!
+				client->get_cgi()->run_cgi(*client);
+
+				// 2. Add write-end to epoll for writing POST body
+				set_cgi_input_fd_to_client_map(cgi_in_fd, client);
+				addEpollFd(cgi_in_fd, EPOLLOUT);
+
+				// 3. Set up output fd for reading CGI response
+				int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
+				if (cgi_out_fd == -1) {
+					std::cout << RED << "Error getting CGI out fd" << std::endl;
+					return 1;
+				}
+				client->set_cgiOutputfd(cgi_out_fd);
+				this->set_cgi_fd_to_client_map(cgi_out_fd, client);
+				if (addEpollFd(cgi_out_fd, EPOLLIN) == -1) {
+					std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
+					return 1;
+				}
+				return true;
+		}
 
 		client->get_cgi()->run_cgi(*client);
 		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
@@ -289,7 +328,6 @@ bool Webserver::processing_cgi(std::shared_ptr<Client>& client, int client_fd)
 			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
 			return 1;
 		}
-		client->set_isCgi(true);
 		return true;
 	}
 	return false;
@@ -336,7 +374,13 @@ int Webserver::process_request(int client_fd){
                 if (body_length >= content_length) {
                     // We have received all the POST data, proceed to build response
                     client->parseClientRequest();
-                    build_response(client_fd);
+					if (processing_cgi(client, client_fd))
+					{
+						std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
+						return 0;
+					}
+					else
+						build_response(client_fd);
                 }
                 return 0; // Still receiving data
             }
@@ -472,6 +516,16 @@ std::shared_ptr<Client> Webserver::get_client_by_cgi_fd(int cgi_fd)
 void Webserver::set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client)
 {
 	this->cgi_fd_to_client_map[cgi_fd] = client;
+}
+
+void Webserver::set_cgi_input_fd_to_client_map(int cgi_in_fd, std::shared_ptr<Client> client) {
+	this->cgi_input_fd_to_client_map[cgi_in_fd] = client;
+}
+
+std::shared_ptr<Client> Webserver::get_client_by_cgi_input_fd(int cgi_in_fd) {
+	if (cgi_input_fd_to_client_map.count(cgi_in_fd))
+		return cgi_input_fd_to_client_map[cgi_in_fd];
+	return nullptr;
 }
 
 void Webserver::clean_up(){

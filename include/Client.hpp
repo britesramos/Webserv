@@ -43,10 +43,13 @@ class Client {
 		std::unordered_map<std::string, std::string>	_Client_RequestMap; //Request
 		std::string										_response; //Response to be sent to the client
 		ServerConfig&									_server_config; //Server configuration for the client
-		bool isCGI;
-		int CgiOutputfd;
+		bool is_CGI_ready;
 		Cgi *cgi;
-		std::string cgi_buffer;
+		int CgiInputfd;
+		int CgiOutputfd;
+		std::string cgi_output_buffer;
+		std::string cgi_input_buffer;
+		size_t cgi_input_written;
 
 	public:
 		Client(int socket_fd, ServerConfig& server_config);
@@ -81,18 +84,27 @@ class Client {
 		const std::unordered_map<std::string, std::string>& get_RequestMap() const;
 		std::string get_Request(std::string key);
 		std::string get_Response();
-		bool get_isCgi();
+		bool get_is_cgi_ready();
 		int get_cgiOutputfd();
+		int get_cgiInputfd();
 		Cgi* get_cgi();
 		std::string get_requestBuffer();
+		size_t get_cgiInputWritten() const;
+		std::string& get_cgiInputBuffer();
 
 		//Setters
 		void set_Client_socket(int socket_fd);
 		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
-		void set_isCgi(bool value);
+		void set_is_cgi_ready(bool value);
 		void set_cgiOutputfd(int fd);
+		void set_cgiInputfd(int fd);
 		void set_cgi(Cgi* cgi);
+		void set_cgiInputWritten(size_t number);
+		void set_cgiInputBuffer(const std::string& buffer);
 		void appendToBufferRequest(std::string to_append);
 		void clearBuffer();
+
+
+
 };
