@@ -227,21 +227,23 @@ int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	if (client->get_Request("method") == "GET"){
-		if (client->handle_get_request() == SUCCESS){
+		if (client->handle_get_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		}
+		else
+			close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
+		else
+			close_connection(client_fd);
 	}
-	// else if (client->get_Request("method") == "DELETE"){
-	// 	if (client->handle_delete_request() == SUCCESS)
-	//		 modifyEpollEvent(client_fd, EPOLLOUT);
-	//}
-	//}
-	//else
-	// ?????
+	else if (client->get_Request("method") == "DELETE"){
+		if (client->handle_delete_request() == SUCCESS)
+			 modifyEpollEvent(client_fd, EPOLLOUT);
+		else
+			close_connection(client_fd);
+	}
 	return 0;
 }
 

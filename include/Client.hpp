@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
+#include <sys/stat.h>
+#include <string.h>
 
 #include "../include/ServerConfig.hpp"
 // #include "../include/Cgi.hpp"
@@ -65,8 +67,9 @@ class Client {
 		int handle_get_request();
 		void handle_error();
 		int handle_post_request();
+		std::string url_decode(const std::string& encode);
 		void handle_success();
-		// void handle_delete_request();
+		int handle_delete_request();
 		int handle_cgi_response(Cgi& cgi);
 
 		bool is_method_allowed(const std::string& url_path, std::string method);

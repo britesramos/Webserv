@@ -254,18 +254,14 @@
       <h1>Yarn Server</h1>
       <p>Your webserver full of yarn and creativity.</p>
     </header>
-
-  <div class="image-container">
-    <img src="../images/yarncrochet.jpg" alt="Yarn Bundles" />
-  </div>
-
-  <button class="button" id="signInBtn">Join Our Yarn Community</button>
-  
+    
+  <button class="button" id="signInBtn">Subscribe</button>
   <!-- Sign In Form -->
   <div class="form-container" id="signInForm">
     <h2 class="form-title">Welcome to Our Community!</h2>
     <p class="form-description">Want to be part of our server and see nice yarn prices and patterns? Sign in</p>
-    <form action="/signin" method="POST">
+    <p id="formFeedback" style="text-align:center; color: #d87c88; display: none;"></p>
+    <form action="/signin/form_submissions.csv" method="POST">
       <div class="form-group">
         <label for="firstName">First Name</label>
         <input type="text" id="firstName" name="firstName" required>
@@ -284,6 +280,11 @@
       <button type="submit" class="button">Submit</button>
     </form>
   </div>
+  <div class="image-container">
+    <img src="../images/yarncrochet.jpg" alt="Yarn Bundles" />
+  </div>
+
+  
 
   <!-- File Upload Form -->
   <button class="button" id="uploadBtn">Share Your Pattern</button>
@@ -310,24 +311,13 @@
 
   <div class="overlay"></div>
   <div class="unsubscribe-form" id="unsubscribeForm">
-    <h2 class="form-title">Unsubscribe Options</h2>
-    <p class="form-description">What would you like to remove?</p>
+    <h2 class="form-title">Unsubscribe</h2>
+    <p class="form-description">Please enter your username to unsubscribe</p>
     <div class="form-group">
-      <label>
-        <input type="checkbox" name="deleteAccount"> Delete my account
-      </label>
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
     </div>
-    <div class="form-group">
-      <label>
-        <input type="checkbox" name="deletePatterns"> Remove my patterns
-      </label>
-    </div>
-    <div class="form-group">
-      <label>
-        <input type="checkbox" name="unsubscribeEmails"> Unsubscribe from emails
-      </label>
-    </div>
-    <button onclick="confirmUnsubscribe()" class="button">Confirm</button>
+    <button onclick="confirmUnsubscribe()" class="button">Unsubscribe</button>
     <button onclick="closeUnsubscribeForm()" class="button" style="background-color: #6b4c4c;">Cancel</button>
   </div>
 
@@ -339,10 +329,46 @@
   </div>
 
   <script>
+    async function handleSubscribe(event) {
+    event.preventDefault(); // Stop default form submission
+    
+    const formData = new FormData(event.target);
+    const data = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        email: formData.get('email')
+    };
+
+    try {
+        const response = await fetch('/signin/form_submissions.csv', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            // Successful submission
+            window.location.href = '/html/Success.html';
+        } else if (response.status === 409) {
+          document.getElementById('formFeedback').textContent = 'This email is already registered!';
+          document.getElementById('formFeedback').style.display = 'block';
+          return;
+        } else {
+            alert('Failed to subscribe. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+
+    return false; // Prevent form submission
+}
     async function handleUnsubscribe() {
       if (confirm('Are you sure you want to unsubscribe? This will delete your account and patterns.')) {
         try {
-          const response = await fetch('/unsubscribe', {
+          const response = await fetch('/signin/form_submission.csv', {
             method: 'DELETE',
           });
           if (response.ok) {
@@ -380,40 +406,37 @@
     }
 
     async function confirmUnsubscribe() {
-      const form = document.getElementById('unsubscribeForm');
-      const options = {
-        account: form.querySelector('[name="deleteAccount"]').checked,
-        patterns: form.querySelector('[name="deletePatterns"]').checked,
-        emails: form.querySelector('[name="unsubscribeEmails"]').checked
-      };
-
-      if (!options.account && !options.patterns && !options.emails) {
-        alert('Please select at least one option');
+    const username = document.getElementById('username').value;
+    
+    if (!username) {
+        alert('Please enter your username');
         return;
-      }
-
-      try {
-        const response = await fetch('/unsubscribe', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(options)
-        });
-
-        if (response.ok) {
-          alert('Your changes have been processed successfully.');
-          window.location.href = '/';
-        } else {
-          alert('Failed to process your request. Please try again later.');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while processing your request.');
-      }
-
-      closeUnsubscribeForm();
     }
+
+    if (confirm('Are you sure you want to unsubscribe? This will delete your account.')) {
+        try {
+            const response = await fetch('/signin/form_submission.csv', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username })
+            });
+
+            if (response.ok) {
+                const htmlContent = await response.text();
+                // Replace the current page content with the server response
+                document.documentElement.innerHTML = htmlContent;
+            } else {
+                alert('Failed to unsubscribe. Please check your username and try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while trying to unsubscribe.');
+        }
+    }
+    closeUnsubscribeForm();
+}
 
     // JavaScript to toggle forms and handle date/time
     document.getElementById('signInBtn').addEventListener('click', function() {
