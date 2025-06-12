@@ -345,7 +345,8 @@
   <button class="button" id="deleteBtn">Want to delete a pattern? 😢</button>
   <div class="form-container" id="deleteForm">
     <h2 class="form-title">Delete Your Pattern</h2>
-    <p class="form-description">Enter the filename of the pattern you want to delete. This cannot be undone!</p>
+    <p class="form-description">Please, enter the EXACT filename of the pattern you want to delete.</p>
+    <p class="form-description" style="color: #d87c88; font-weight: bold;">⚠️ This action cannot be undone! ⚠️ </p>
     <form action="/cgi-bin/delete_upload.py" method="POST">
       <div class="form-group">
         <label for="deleteFilename">Pattern filename</label>
