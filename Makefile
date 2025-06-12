@@ -11,6 +11,7 @@ RESET = \033[0m
 
 OBJ_DIR = obj
 SRC_DIR = src
+UPLOAD_DIR = www/uploads
 
 SOURCE = main.cpp \
 		ConfigParser.cpp \
@@ -45,6 +46,10 @@ clean:
 
 fclean: clean
 	@rm -f $(NAME)
+	@if [ -d "$(UPLOAD_DIR)" ]; then \
+		echo "$(PINK)$(BOLD) Removing uploaded files...$(RESET)"; \
+		rm -rf "$(UPLOAD_DIR)"; \
+	fi
 	@echo "$(B_GREEN)$(WHITE_B) ALL Cleansed! $(RESET)"
 
 re: fclean all

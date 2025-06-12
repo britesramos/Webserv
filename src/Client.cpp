@@ -102,6 +102,9 @@ int Client::parse_header(){
 		header.erase(0, pos + 2);
 		pos = header.find("\r\n");
 	}
+	// 		for (std::unordered_map<std::string, std::string>::iterator it = _Client_RequestMap.begin(); it != _Client_RequestMap.end(); ++it) {
+	// 	std::cout << YELLOW << "Header: [" << it->first << "] = [" << it->second << "]" << std::endl;
+	// }
 	return 0;
 }
 

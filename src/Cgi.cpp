@@ -34,19 +34,18 @@ void Cgi::creating_cgi_env(Client &client)
 
 	if (method == "POST" && this->post == true) // TODO: CHECK is receiving the content correct
 	{
-		std::cout << "			POST method detected, adding POST specific environment variables." << std::endl;
-		std::string content_lenght = client.get_Request("content_length");
+		std::string content_lenght = client.get_Request("Content-Length:");
 		this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
-		std::string content_type = client.get_Request("content_type");
-			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
+		std::string content_type = client.get_Request("Content-Type:");
+		this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
 	}
 
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
 
-	for (size_t i = 0; i < this->env.size(); ++i)
-    std::cerr <<  YELLOW <<"			CGI ENV: " << this->env[i] << std::endl;
+	// for (size_t i = 0; i < this->env.size(); ++i)
+    // std::cerr <<  YELLOW <<"			CGI ENV: " << this->env[i] << std::endl;
 }
 
 void Cgi::start_cgi(Location config)
