@@ -341,6 +341,21 @@
     <div id="dateTimeResult" class="datetime-result"></div>
   </div>
 
+  <!-- Delete Pattern Form -->
+  <button class="button" id="deleteBtn">Want to delete a pattern? 😢</button>
+  <div class="form-container" id="deleteForm">
+    <h2 class="form-title">Delete Your Pattern</h2>
+    <p class="form-description">Enter the filename of the pattern you want to delete. This cannot be undone!</p>
+    <form action="/cgi-bin/delete_upload.py" method="POST">
+      <div class="form-group">
+        <label for="deleteFilename">Pattern filename</label>
+        <input type="text" id="deleteFilename" name="filename" required placeholder="e.g. mypattern.jpg">
+      </div>
+      <button type="submit" class="button" style="background-color: #d32f2f;">Delete</button>
+    </form>
+    <div id="deleteResult" class="upload-result"></div>
+  </div>
+
   <div class="overlay"></div>
   <div class="unsubscribe-form" id="unsubscribeForm">
     <h2 class="form-title">Unsubscribe</h2>
@@ -531,6 +546,40 @@
         console.error('Error:', error);
         resultDiv.className = 'upload-result error';
         resultDiv.innerHTML = '❌ <span>Error uploading file. Please try again.</span>';
+      }
+    });
+
+    // Toggle Delete Pattern form
+    document.getElementById('deleteBtn').addEventListener('click', function() {
+      const form = document.getElementById('deleteForm');
+      form.classList.toggle('active');
+    });
+
+    // AJAX for Delete Pattern form
+    document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const resultDiv = document.getElementById('deleteResult');
+      resultDiv.className = 'upload-result';
+      resultDiv.textContent = 'Deleting...';
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('/cgi-bin/delete_upload.py', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.text();
+        if (data.includes('Error:')) {
+          resultDiv.className = 'upload-result error';
+          resultDiv.innerHTML = `❌ <span>${data}</span>`;
+        } else {
+          window.location.href = '/Success.html';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
       }
     });
   </script>
