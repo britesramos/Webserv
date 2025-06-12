@@ -142,9 +142,9 @@ int Client::parseClientRequest(){
 //Building response methods:
 
 int Client::handle_get_request(){
-	std::string response;
 	std::string url_path = this->get_Request("url_path");
 	if (is_method_allowed(url_path, "GET") == true){
+		std::string response;
 		//1)Build response:
 		std::cout << "GET request for: " << url_path << std::endl;
 		std::string body = build_body(url_path, 0);
@@ -155,18 +155,143 @@ int Client::handle_get_request(){
 		response = status_line + header;
 		std::cout << "Response: " << response << std::endl;
 		response += body;
+		this->_response = response;
 	}
-	this->_response = response;
+	return 0;
+}
+
+int Client::handle_delete_request(){
+	std::string url_path = this->get_Request("url_path");
+	std::cout << "URL_PATH:::: " << url_path << std::endl;
+	std::string body = this->get_Request("body");
+	if (is_method_allowed(url_path, "DELETE") == true){
+		//1)if url_path doesnt exist return with error
+		//2)if email doesnt exist return message that this email doesnt exist on data base
+		//3)
+
+		//If it has body delete entry in that path.
+		//If no body delete file.
+		handle_success();
+	}
 	return 0;
 }
 
 int Client::handle_post_request(){
-	std::string response;
 	std::string url_path = this->get_Request("url_path");
-	std::cout << "URL_PATH:::: " << url_path << std::endl;
-	if (is_method_allowed(url_path, "POST") == true)
+	std::string root = findRoot(url_path);
+	if (is_method_allowed(url_path, "POST") == true){
+		//TODO: Check content type.
+		//1)If folder doesnt exist create:
+		//1.1) Extract folder path:
+		size_t last_slash = url_path.find_last_of('/');
+		std::string directory_path;
+		if (last_slash != std::string::npos)
+			directory_path = root + url_path.substr(0, last_slash);
+		else
+			directory_path = root;
+		//1.2) If it doesnt exist create folder:
+		struct stat stat_buf;
+		if (stat(directory_path.c_str(), &stat_buf) == -1){
+			if(mkdir(directory_path.c_str(), 0777) == -1){
+				std::cout << RED << "Failed to create directory: " << directory_path << std::endl;
+				this->_error_code = "500";
+				return 1;
+			}
+		}
+		//1.4) Create file if it doesnt exist:
+		std::string file_path = root + url_path;
+		std::ofstream file(file_path.c_str(), std::ios::app);
+		if (!file.is_open()){
+			std::cout << RED << "Failed to open/create file: " << file_path << std::endl;
+			this->_error_code = "500";
+			return 1;
+		}
+		file.close();
+		//2)If entry doenst exist already include it:
+		//2.1)Parse form data:
+		std::string body = this->_Client_RequestMap["body"];
+		std::vector<std::string> temp;
+		std::vector<std::string> entries;
+		size_t pos1 = 0;
+		while ((pos1 = body.find('&')) != std::string::npos){
+			temp.push_back(body.substr(0, pos1));
+			body.erase(0, pos1 + 1);
+		}
+		if (!body.empty()){
+			temp.push_back(body);
+		}
+		for (size_t i = 0; i < temp.size(); ++i){
+			size_t pos2 = temp[i].find('=');
+			if(pos2 != std::string::npos){
+				std::string tmp = temp[i].substr(pos2 + 1);
+				entries.push_back(tmp);
+			}
+		}
+		for (const auto& entry : entries) {
+			std::cout << "Entry: " << entry << std::endl;
+		}
+
+		//2.2)Check if entry already exists if not add it to the file:
+		std::string to_look_for;
+		size_t i = 0;
+		while(i < entries.size() - 1){
+			to_look_for += url_decode(entries[i]);
+			to_look_for += ",";
+			++i;
+		}
+		to_look_for += url_decode(entries[i]);
+		std::ifstream read_file(file_path.c_str());
+		if (!read_file.is_open()) {
+			std::cout << RED << "Failed to open file for reading: " << file_path << std::endl;
+			this->_error_code = "500";
+			return 1;
+		}
+		std::stringstream buffer;
+		buffer << read_file.rdbuf();
+		std::string content = buffer.str();
+		read_file.close();
+		std::cout << YELLOW << "CONTENT: " << content << std::endl;
+		if (content.find(to_look_for) != std::string::npos) {
+			std::cout << YELLOW << "This entry already exists: " << to_look_for << std::endl;
+			this->_error_code = "409"; //I dont think this is the right way to deal with this.
+			return 0;
+		}
+		else{
+			std::ofstream write_file(file_path.c_str(), std::ios::app);
+			if (!write_file.is_open()) {
+				std::cout << RED << "Failed to open file for writing: " << file_path << std::endl;
+				this->_error_code = "500";
+				return 1;
+			}
+			write_file << to_look_for << "\n";
+			write_file.close();
+			std::cout << GREEN << "Successfully added new entry: " << to_look_for << std::endl;
+		}
 		handle_success();
+	}
 	return 0;
+}
+
+std::string Client::url_decode(const std::string& encoded) {
+    std::string decoded = encoded;
+    std::string::size_type pos = 0;
+
+    // Replace %40 with @
+    while ((pos = decoded.find("%40", pos)) != std::string::npos) {
+        decoded.replace(pos, 3, "@");
+        pos += 1;
+    }
+
+    // Reset position for next replacement if needed
+    pos = 0;
+    
+    // Replace %20 with space
+    while ((pos = decoded.find("%20", pos)) != std::string::npos) {
+        decoded.replace(pos, 3, " ");
+        pos += 1;
+    }
+
+    return decoded;
 }
 
 int Client::handle_cgi_response(Cgi& cgi)
@@ -221,8 +346,8 @@ std::string Client::build_header(std::string body){
 	return (header);
 }
 
-//TODO: I think it is only matching url_paths to the locations map, it should look for the logest prefix match instead.
 std::string Client::findRoot(const std::string& url_path){
+	//1)Find longest prefix match:
 	std::string root;
 	std::unordered_map<std::string, Location> locations;
 	locations = this->_server_config.getLocations();
@@ -238,12 +363,6 @@ std::string Client::findRoot(const std::string& url_path){
 	}
 
 	const Location& location = locations.at(best_match);
-	//TODO: Find a way to check if there is a location that matches that url_path.
-	//1) If no location found, return default root:
-	// else{
-	// 	std::cerr << RED << "Error: No location found for url path: " << url_path << std::endl;
-	// 	root = "www/";
-	// }
 	//2) Get root from location:
 	root = location.getRoot();
 	if (root.empty()){
