@@ -5,6 +5,9 @@ Cgi::Cgi()
 	this->del = false;
 	this->get = false;
 	this->post = false;
+	this->config_autoindex = false;
+	this->last_activity = std::chrono::steady_clock::now();
+	this->start_time = std::chrono::steady_clock::now();
 }
 
 Cgi::~Cgi()
@@ -88,16 +91,15 @@ void Cgi::start_cgi(Location config)
 void Cgi::run_cgi(Client& client)
 {
 	std::string method = client.get_Request("method");
-	pid_t pid;
 
-	pid = fork();
-	if (pid == -1)
+	this->pid = fork();
+	if (this->pid == -1)
 	{
 		perror("Fork");
 		return ;
 	}
 
-	if (pid == 0)
+	if (this->pid == 0)
 	{
 		//child
 		if (method == "POST" && this->post == true)
@@ -123,6 +125,9 @@ void Cgi::run_cgi(Client& client)
 	else
 	{
 		//parent
+		this->update_activity();
+		this->last_activity = this->start_time;
+
 		if (method == "POST" && this->post == true)
 			close(this->cgi_in[READ]);
 		close(this->cgi_out[WRITE]);
@@ -164,4 +169,26 @@ bool Cgi::get_method_post() const
 bool Cgi::get_config_autoindex() const
 {
 	return (this->config_autoindex);
+}
+
+pid_t Cgi::get_pid() const
+{
+	return this->pid;
+}
+
+std::string Cgi::get_config_root() const
+{ 
+	return this->config_root;
+}
+
+void Cgi::update_activity() {
+	last_activity = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Cgi::get_activity() const {
+	return this->last_activity;
+}
+
+std::chrono::steady_clock::time_point Cgi::get_start_time() const {
+	return this->start_time;
 }

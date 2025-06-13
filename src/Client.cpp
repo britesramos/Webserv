@@ -3,7 +3,7 @@
 
 Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
-	this->is_CGI_ready = false;
+	this->last_activity = std::chrono::steady_clock::now();
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
 
@@ -31,7 +31,8 @@ Client& Client::operator=(const Client& other){
 		this->_Client_RequestMap = other._Client_RequestMap;
 		this->_response = other._response;
 		this->_server_config = other._server_config;
-		this->is_CGI_ready = other.is_CGI_ready;
+		this->last_activity = other.last_activity;
+		// this->is_CGI_ready = other.is_CGI_ready;
 	}
 	return *this;
 }
@@ -331,6 +332,7 @@ int Client::handle_cgi_response(Cgi& cgi)
 	else {
 		buffer[bytes_read] = '\0';
 		cgi_output_buffer += buffer;
+		cgi.update_activity();
 		return 0;
 	}
 }
@@ -478,10 +480,10 @@ std::string Client::get_error_code(){
 	return (this->_error_code);
 }
 
-bool Client::get_is_cgi_ready()
-{
-	return (this->is_CGI_ready);
-}
+// bool Client::get_is_cgi_ready()
+// {
+// 	return (this->is_CGI_ready);
+// }
 
 int Client::get_cgiOutputfd()
 {
@@ -513,10 +515,10 @@ void Client::set_error_code(std::string error_code){
 	this->_error_code = error_code;
 }
 
-void Client::set_is_cgi_ready(bool value)
-{
-	this->is_CGI_ready = value;
-}
+// void Client::set_is_cgi_ready(bool value)
+// {
+// 	this->is_CGI_ready = value;
+// }
 
 void Client::set_cgiOutputfd(int fd)
 {
@@ -560,4 +562,12 @@ void Client::set_cgiInputWritten(size_t number)
 size_t Client::get_cgiInputWritten() const
 {
 	return this->cgi_input_written;
+}
+
+void Client::update_activity() {
+	this->last_activity = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Client::get_activity() const {
+	return this->last_activity;
 }

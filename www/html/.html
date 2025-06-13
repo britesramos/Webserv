@@ -347,7 +347,7 @@
     <h2 class="form-title">Delete Your Pattern</h2>
     <p class="form-description">Please, enter the EXACT filename of the pattern you want to delete.</p>
     <p class="form-description" style="color: #d87c88; font-weight: bold;">⚠️ This action cannot be undone! ⚠️ </p>
-    <form action="/cgi-bin/delete_upload.py" method="POST">
+    <form action="/cgi-bin/delete_upload.py">
       <div class="form-group">
         <label for="deleteFilename">Pattern filename</label>
         <input type="text" id="deleteFilename" name="filename" required placeholder="e.g. mypattern.jpg">
@@ -395,8 +395,11 @@
             },
             body: JSON.stringify(data)
         });
-
-        if (response.ok) {
+        const contentType = response.headers.get('Content-Type');
+        const respText = await response.text();
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = respText;
+        } else if (response.ok) {
             // Successful submission
             window.location.href = '/html/Success.html';
         } else if (response.status === 409) {
@@ -419,11 +422,15 @@
           const response = await fetch('/signin/form_submission.csv', {
             method: 'DELETE',
           });
-          if (response.ok) {
+          const contentType = response.headers.get('Content-Type');
+          const data = await response.text();
+          if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = data;
+          } else if (!response.ok) {
+            alert('Failed to unsubscribe. Please try again later.');
+          } else {
             alert('You have been successfully unsubscribed.');
             window.location.href = '/'; // Redirect to home page
-          } else {
-            alert('Failed to unsubscribe. Please try again later.');
           }
         } catch (error) {
           console.error('Error:', error);
@@ -471,12 +478,14 @@
                 body: JSON.stringify({ username: username })
             });
 
-            if (response.ok) {
-                const htmlContent = await response.text();
-                // Replace the current page content with the server response
+            const contentType = response.headers.get('Content-Type');
+            const htmlContent = await response.text();
+            if (!response.ok && contentType && contentType.includes('text/html')) {
                 document.documentElement.innerHTML = htmlContent;
-            } else {
+            } else if (!response.ok) {
                 alert('Failed to unsubscribe. Please check your username and try again.');
+            } else {
+                document.documentElement.innerHTML = htmlContent;
             }
         } catch (error) {
             console.error('Error:', error);
@@ -497,6 +506,7 @@
       form.classList.toggle('active');
     });
 
+    // Date Time Section
     document.getElementById('dateTimeBtn').addEventListener('click', async function() {
       const container = document.getElementById('dateTimeContainer');
       const resultDiv = document.getElementById('dateTimeResult');
@@ -506,12 +516,12 @@
         resultDiv.innerHTML = '<p style="color: #6b4c4c;">Loading...</p>';
         try {
           const response = await fetch('/cgi-bin/date_time.py');
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+          const contentType = response.headers.get('Content-Type');
           const data = await response.text();
-          if (data.includes('Error:')) {
-            resultDiv.innerHTML = data;
+          if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = data;
+          } else if (!response.ok) {
+            resultDiv.innerHTML = '<p style="color: #d87c88;">Error fetching date/time. Please try again.</p>';
           } else {
             resultDiv.innerHTML = data;
           }
@@ -556,7 +566,35 @@
       form.classList.toggle('active');
     });
 
-    // AJAX for Delete Pattern form
+    // // AJAX for Delete Pattern form
+    // document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
+    //   event.preventDefault();
+    //   const resultDiv = document.getElementById('deleteResult');
+    //   resultDiv.className = 'upload-result';
+    //   resultDiv.textContent = 'Deleting...';
+
+    //   const formData = new FormData(this);
+
+    //   try {
+    //     const response = await fetch('/cgi-bin/delete_upload.py', {
+    //       method: 'POST',
+    //       body: formData
+    //     });
+    //     const data = await response.text();
+    //     if (data.includes('Error:')) {
+    //       resultDiv.className = 'upload-result error';
+    //       resultDiv.innerHTML = `❌ <span>${data}</span>`;
+    //     } else {
+    //       window.location.href = '/Success.html';
+    //     }
+    //   } catch (error) {
+    //     console.error('Error:', error);
+    //     resultDiv.className = 'upload-result error';
+    //     resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
+    //   }
+    // });
+
+    // JavaScript to send a DELETE request with fetch
     document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
       event.preventDefault();
       const resultDiv = document.getElementById('deleteResult');
@@ -564,14 +602,21 @@
       resultDiv.textContent = 'Deleting...';
 
       const formData = new FormData(this);
+      const filename = formData.get('filename');
 
       try {
         const response = await fetch('/cgi-bin/delete_upload.py', {
-          method: 'POST',
-          body: formData
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ filename: filename })
         });
+        const contentType = response.headers.get('Content-Type');
         const data = await response.text();
-        if (data.includes('Error:')) {
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+          document.documentElement.innerHTML = data;
+        } else if (!response.ok) {
           resultDiv.className = 'upload-result error';
           resultDiv.innerHTML = `❌ <span>${data}</span>`;
         } else {

@@ -9,5 +9,5 @@ print ('<body>')
 print ('<h2>Hello Word! This is a CGI from Python Script!</h2>')
 print ('</body>')
 print ('</html>')
-# hdkjfhdskjfhdskjfhdskjfhsdkfjhdskjfhkdsjhfkdsj
 
+# hdkjfhdskjfhdskjfhdskjfhsdkfjhdskjfhkdsjhfkdsj

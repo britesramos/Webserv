@@ -5,6 +5,12 @@ import datetime
 # print("Content-type: text/html\n")
 
 x = datetime.datetime.now()
+
+# timeout check
+
+# while(1):
+#     x = datetime.datetime.now()
+
 print(f'''
 <div style='text-align: center; color: #a05270;'>
     <h3 style='margin-bottom: 15px;'>Current Date and Time:</h3>

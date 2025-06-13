@@ -3,29 +3,43 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import os
-import cgi
+import sys
+import json
 
-# print("Content-type: text/html\r\n")
-
-form = cgi.FieldStorage()
-filename = form.getfirst("filename", "").strip()
-
-# Adjust this path to your upload directory if needed
 UPLOAD_DIR = "www/uploads/"
 
-if not filename:
-    print("Error: No filename provided.")
+def print_response(msg):
+#     print("Content-type: text/html\r\n")
+    print(msg)
+
+method = os.environ.get("REQUEST_METHOD", "GET")
+
+if method == "DELETE":
+    try:
+        content_length = int(os.environ.get("CONTENT_LENGTH", 0))
+        body = sys.stdin.read(content_length)
+        data = json.loads(body)
+        filename = data.get("filename", "").strip()
+    except Exception as e:
+        print_response(f"Error: Invalid request body. {e}")
+        sys.exit(0)
 else:
-    # Prevent directory traversal
+    import cgi
+    form = cgi.FieldStorage()
+    filename = form.getfirst("filename", "").strip()
+
+if not filename:
+    print_response("Error: No filename provided.")
+else:
     if "/" in filename or "\\" in filename:
-        print("Error: Invalid filename.")
+        print_response("Error: Invalid filename.")
     else:
         filepath = os.path.join(UPLOAD_DIR, filename)
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
-                print(f"Pattern <b>{filename}</b> deleted successfully.")
+                print_response(f"Pattern <b>{filename}</b> deleted successfully.")
             except Exception as e:
-                print(f"Error: Could not delete file. {e}")
+                print_response(f"Error: Could not delete file. {e}")
         else:
-            print("Error: File not found.")
+            print_response("Error: File not found.")

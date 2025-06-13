@@ -8,9 +8,14 @@
 #include "../include/Cgi.hpp"
 #include "../include/Location.hpp"
 #include <fcntl.h>
+#include <chrono> // For timeouts
 
 #define SUCCESS 0
 #define FAIL 1
+
+#define TIMEOUT 3000 // miliseconds. it is good between 1 and 5 seconds
+#define CLIENT_TIMEOUT 30 // seconds
+#define CGI_TIMEOUT 10 // seconds
 
 class Webserver{
 	private:
@@ -63,6 +68,7 @@ class Webserver{
 		Location getLocationByPath(int client_fd, const std::string& url_path);
 
 		int get_epoll_fd() const;
+		void timeout_checks();
 
 		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
 		std::shared_ptr<Client> get_client_by_cgi_input_fd(int cgi_in_fd);
