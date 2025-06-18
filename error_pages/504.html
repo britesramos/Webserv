@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>405 Method Not Allowed</title>
+  <title>504 Gateway Timeout</title>
   <style>
     * {
       box-sizing: border-box;
@@ -29,7 +29,8 @@
     .error-code {
       font-size: 8rem;
       font-weight: bold;
-      color: #2563eb;
+      color: #ec4899;
+
     }
 
     .message {
@@ -46,7 +47,7 @@
       display: inline-block;
       margin-top: 2rem;
       text-decoration: none;
-      background-color: #2563eb;
+      background-color: #ec4899;
       color: white;
       padding: 0.75rem 1.5rem;
       border-radius: 0.5rem;
@@ -60,10 +61,11 @@
 </head>
 <body>
   <div class="container">
-    <div class="error-code">405</div>
-    <div class="message">Method Not Allowed</div>
+    <div class="error-code">504</div>
+    <div class="message">Gateway Timeout</div>
     <div class="description">
-        Oops! The method you used is not allowed for this resource.
+      Sorry! The server took too long to respond.<br>
+      Please try again later.
     </div>
     <a href="/" class="home-link">Go Back Home</a>
   </div>

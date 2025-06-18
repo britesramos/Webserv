@@ -3,7 +3,7 @@
 
 Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
-	this->isCGI = false;
+	this->last_activity = std::chrono::steady_clock::now();
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
 }
 
@@ -31,7 +31,8 @@ Client& Client::operator=(const Client& other){
 		this->_Client_RequestMap = other._Client_RequestMap;
 		this->_response = other._response;
 		this->_server_config = other._server_config;
-		this->isCGI = other.isCGI;
+		this->last_activity = other.last_activity;
+		// this->is_CGI_ready = other.is_CGI_ready;
 	}
 	return *this;
 }
@@ -102,6 +103,9 @@ int Client::parse_header(){
 		header.erase(0, pos + 2);
 		pos = header.find("\r\n");
 	}
+	// 		for (std::unordered_map<std::string, std::string>::iterator it = _Client_RequestMap.begin(); it != _Client_RequestMap.end(); ++it) {
+	// 	std::cout << YELLOW << "Header: [" << it->first << "] = [" << it->second << "]" << std::endl;
+	// }
 	return 0;
 }
 
@@ -308,26 +312,27 @@ int Client::handle_cgi_response(Cgi& cgi)
 	else if (bytes_read == 0) {
 		std::cout << "CGI process has finished reading output." << std::endl;
 		std::string status_line = build_status_line("200", "OK");
-		std::string header = build_header(cgi_buffer);
-		std::string full_response = status_line + header + cgi_buffer;
+		std::string header = build_header(cgi_output_buffer);
+		std::string full_response = status_line + header + cgi_output_buffer;
 
 		std::cout << "Final CGI Response:\n" << full_response << std::endl;
 		this->_response = full_response;
 
 		// check for error in python! trash trash trash
-		if (cgi_buffer.find("Traceback") != std::string::npos) {
-			size_t trace_pos = cgi_buffer.find("Traceback");
-			std::string traceback = cgi_buffer.substr(trace_pos);
+		if (cgi_output_buffer.find("Traceback") != std::string::npos) {
+			size_t trace_pos = cgi_output_buffer.find("Traceback");
+			std::string traceback = cgi_output_buffer.substr(trace_pos);
 			std::cerr << "CGI Error:\n" << traceback << std::endl;
 			this->set_error_code("500");
 			return -1;
 		}
-		this->cgi_buffer.clear();
+		this->cgi_output_buffer.clear();
 		return 1;
 	}
 	else {
 		buffer[bytes_read] = '\0';
-		cgi_buffer += buffer;
+		cgi_output_buffer += buffer;
+		cgi.update_activity();
 		return 0;
 	}
 }
@@ -475,14 +480,19 @@ std::string Client::get_error_code(){
 	return (this->_error_code);
 }
 
-bool Client::get_isCgi()
-{
-	return (this->isCGI);
-}
+// bool Client::get_is_cgi_ready()
+// {
+// 	return (this->is_CGI_ready);
+// }
 
 int Client::get_cgiOutputfd()
 {
 	return this->CgiOutputfd;
+}
+
+int Client::get_cgiInputfd()
+{
+	return this->CgiInputfd;
 }
 
 Cgi* Client::get_cgi()
@@ -505,15 +515,21 @@ void Client::set_error_code(std::string error_code){
 	this->_error_code = error_code;
 }
 
-void Client::set_isCgi(bool value)
-{
-	this->isCGI = value;
-}
+// void Client::set_is_cgi_ready(bool value)
+// {
+// 	this->is_CGI_ready = value;
+// }
 
 void Client::set_cgiOutputfd(int fd)
 {
 	this->CgiOutputfd = fd;
 }
+
+void Client::set_cgiInputfd(int fd)
+{
+	this->CgiInputfd = fd;
+}
+
 
 void Client::set_cgi(Cgi* cgi)
 {
@@ -526,4 +542,32 @@ void Client::appendToBufferRequest(std::string to_append){
 
 void Client::clearBuffer(){
 	this->_request_buffer = "";
+}
+
+
+void Client::set_cgiInputBuffer(const std::string& buffer)
+{
+	this->cgi_input_buffer = buffer;
+}
+std::string& Client::get_cgiInputBuffer()
+{
+	return this->cgi_input_buffer;
+}
+
+void Client::set_cgiInputWritten(size_t number)
+{
+	this->cgi_input_written = number;
+}
+
+size_t Client::get_cgiInputWritten() const
+{
+	return this->cgi_input_written;
+}
+
+void Client::update_activity() {
+	this->last_activity = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Client::get_activity() const {
+	return this->last_activity;
 }

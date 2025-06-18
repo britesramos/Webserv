@@ -95,6 +95,10 @@ const std::unordered_map<int, std::shared_ptr<Client>>& Server::getClients() con
 	return this->_clients;
 }
 
+std::unordered_map<int, std::shared_ptr<Client>>& Server::getClients() {
+	return this->_clients;
+}
+
 int::Server::getServerSocket() const{
 	return this->_Server_socket;
 }

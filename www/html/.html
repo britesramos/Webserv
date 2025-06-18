@@ -138,6 +138,37 @@
       background-color: #fff8f0;
     }
 
+    .datetime-result:empty {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+    }
+
+    /* Upload result custom style */
+    .upload-result {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #fcebea; /* Always the same background */
+      color: #a05270;
+      max-width: 100%;
+      word-break: break-word;
+      font-size: 1.1em;
+      margin: 0 auto;
+      font-weight: 500;
+    }
+    .upload-result:empty {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+    }
+    .upload-result.success {
+      color: #388e3c; /* green for success */
+    }
+    .upload-result.error {
+      color: #d32f2f; /* red for error */
+    }
+
     .footer {
       width: calc(100% + 40px);
       margin-left: -20px;
@@ -291,14 +322,15 @@
   <div class="form-container" id="uploadForm">
     <h2 class="form-title">Upload Your Pattern</h2>
     <p class="form-description">Want to make your pattern part of our platform?</p>
-    <p class="form-description" style="color: #d87c88; font-weight: bold;">Upload here for approval! ✨</p>
-    <form action="/cgi-bin/upload.py" method="POST" enctype="multipart/form-data" onsubmit="window.location.href='/html/Success.html';">
+    <p class="form-description" style="color: #d87c88; font-weight: bold;">Upload a picture here for approval! ✨</p>
+    <form action="/cgi-bin/upload.py" method="POST" enctype="multipart/form-data">
       <div class="form-group">
         <label for="fileUpload">Choose your pattern</label>
-        <input type="file" id="fileUpload" name="fileUpload" required>
+        <input type="file" id="fileUpload" name="image" required>
       </div>
       <button type="submit" class="button">Upload</button>
     </form>
+    <div id="uploadResult" class="upload-result"></div>
   </div>
 
   <!-- Date Time Section -->
@@ -307,6 +339,22 @@
     <h2 class="form-title">Let's Connect! 🧶</h2>
     <p class="form-description">Want to chat about patterns and yarn? First, let's check our time zones so we can craft together!</p>
     <div id="dateTimeResult" class="datetime-result"></div>
+  </div>
+
+  <!-- Delete Pattern Form -->
+  <button class="button" id="deleteBtn">Want to delete a pattern? 😢</button>
+  <div class="form-container" id="deleteForm">
+    <h2 class="form-title">Delete Your Pattern</h2>
+    <p class="form-description">Please, enter the EXACT filename of the pattern you want to delete.</p>
+    <p class="form-description" style="color: #d87c88; font-weight: bold;">⚠️ This action cannot be undone! ⚠️ </p>
+    <form action="/cgi-bin/delete_upload.py">
+      <div class="form-group">
+        <label for="deleteFilename">Pattern filename</label>
+        <input type="text" id="deleteFilename" name="filename" required placeholder="e.g. mypattern.jpg">
+      </div>
+      <button type="submit" class="button" style="background-color: #d32f2f;">Delete</button>
+    </form>
+    <div id="deleteResult" class="upload-result"></div>
   </div>
 
   <div class="overlay"></div>
@@ -347,8 +395,11 @@
             },
             body: JSON.stringify(data)
         });
-
-        if (response.ok) {
+        const contentType = response.headers.get('Content-Type');
+        const respText = await response.text();
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = respText;
+        } else if (response.ok) {
             // Successful submission
             window.location.href = '/html/Success.html';
         } else if (response.status === 409) {
@@ -371,11 +422,15 @@
           const response = await fetch('/signin/form_submission.csv', {
             method: 'DELETE',
           });
-          if (response.ok) {
+          const contentType = response.headers.get('Content-Type');
+          const data = await response.text();
+          if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = data;
+          } else if (!response.ok) {
+            alert('Failed to unsubscribe. Please try again later.');
+          } else {
             alert('You have been successfully unsubscribed.');
             window.location.href = '/'; // Redirect to home page
-          } else {
-            alert('Failed to unsubscribe. Please try again later.');
           }
         } catch (error) {
           console.error('Error:', error);
@@ -423,12 +478,14 @@
                 body: JSON.stringify({ username: username })
             });
 
-            if (response.ok) {
-                const htmlContent = await response.text();
-                // Replace the current page content with the server response
+            const contentType = response.headers.get('Content-Type');
+            const htmlContent = await response.text();
+            if (!response.ok && contentType && contentType.includes('text/html')) {
                 document.documentElement.innerHTML = htmlContent;
-            } else {
+            } else if (!response.ok) {
                 alert('Failed to unsubscribe. Please check your username and try again.');
+            } else {
+                document.documentElement.innerHTML = htmlContent;
             }
         } catch (error) {
             console.error('Error:', error);
@@ -449,6 +506,7 @@
       form.classList.toggle('active');
     });
 
+    // Date Time Section
     document.getElementById('dateTimeBtn').addEventListener('click', async function() {
       const container = document.getElementById('dateTimeContainer');
       const resultDiv = document.getElementById('dateTimeResult');
@@ -458,12 +516,12 @@
         resultDiv.innerHTML = '<p style="color: #6b4c4c;">Loading...</p>';
         try {
           const response = await fetch('/cgi-bin/date_time.py');
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+          const contentType = response.headers.get('Content-Type');
           const data = await response.text();
-          if (data.includes('Error:')) {
-            resultDiv.innerHTML = data;
+          if (!response.ok && contentType && contentType.includes('text/html')) {
+            document.documentElement.innerHTML = data;
+          } else if (!response.ok) {
+            resultDiv.innerHTML = '<p style="color: #d87c88;">Error fetching date/time. Please try again.</p>';
           } else {
             resultDiv.innerHTML = data;
           }
@@ -471,6 +529,103 @@
           console.error('Error:', error);
           resultDiv.innerHTML = '<p style="color: #d87c88;">Error fetching date/time. Please try again.</p>';
         }
+      }
+    });
+
+    // Upload form AJAX logic
+    document.querySelector('#uploadForm form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const resultDiv = document.getElementById('uploadResult');
+      resultDiv.className = 'upload-result'; // Reset classes
+      resultDiv.textContent = 'Uploading...';
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('/cgi-bin/upload.py', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.text();
+        if (data.includes('Error:')) {
+          resultDiv.className = 'upload-result error';
+          resultDiv.innerHTML = `❌ <span>${data}</span>`;
+        } else {
+          window.location.href = '/Success.html';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = '❌ <span>Error uploading file. Please try again.</span>';
+      }
+    });
+
+    // Toggle Delete Pattern form
+    document.getElementById('deleteBtn').addEventListener('click', function() {
+      const form = document.getElementById('deleteForm');
+      form.classList.toggle('active');
+    });
+
+    // // AJAX for Delete Pattern form
+    // document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
+    //   event.preventDefault();
+    //   const resultDiv = document.getElementById('deleteResult');
+    //   resultDiv.className = 'upload-result';
+    //   resultDiv.textContent = 'Deleting...';
+
+    //   const formData = new FormData(this);
+
+    //   try {
+    //     const response = await fetch('/cgi-bin/delete_upload.py', {
+    //       method: 'POST',
+    //       body: formData
+    //     });
+    //     const data = await response.text();
+    //     if (data.includes('Error:')) {
+    //       resultDiv.className = 'upload-result error';
+    //       resultDiv.innerHTML = `❌ <span>${data}</span>`;
+    //     } else {
+    //       window.location.href = '/Success.html';
+    //     }
+    //   } catch (error) {
+    //     console.error('Error:', error);
+    //     resultDiv.className = 'upload-result error';
+    //     resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
+    //   }
+    // });
+
+    // JavaScript to send a DELETE request with fetch
+    document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const resultDiv = document.getElementById('deleteResult');
+      resultDiv.className = 'upload-result';
+      resultDiv.textContent = 'Deleting...';
+
+      const formData = new FormData(this);
+      const filename = formData.get('filename');
+
+      try {
+        const response = await fetch('/cgi-bin/delete_upload.py', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ filename: filename })
+        });
+        const contentType = response.headers.get('Content-Type');
+        const data = await response.text();
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+          document.documentElement.innerHTML = data;
+        } else if (!response.ok) {
+          resultDiv.className = 'upload-result error';
+          resultDiv.innerHTML = `❌ <span>${data}</span>`;
+        } else {
+          window.location.href = '/Success.html';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
       }
     });
   </script>
