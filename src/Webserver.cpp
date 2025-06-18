@@ -225,6 +225,7 @@ void Webserver::timeout_checks() {
 				std::cout << RED << "Client " << client->get_Client_socket() << " timed out." << std::endl;
 				client->set_error_code("408");
 				modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+				break ;
 			} else {
 				++it;
 			}

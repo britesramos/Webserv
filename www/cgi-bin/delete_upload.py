@@ -9,7 +9,7 @@ import json
 UPLOAD_DIR = "www/uploads/"
 
 def print_response(msg):
-#     print("Content-type: text/html\r\n")
+    # print("Content-type: text/html\r\n")
     print(msg)
 
 method = os.environ.get("REQUEST_METHOD", "GET")

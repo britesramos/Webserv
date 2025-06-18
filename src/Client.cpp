@@ -132,7 +132,7 @@ int Client::parseClientRequest(){
 		std::cerr << RED << "Error parsing header of request" << std::endl;
 		return -1;
 	}
-	if (this->_request_buffer.find("POST") != std::string::npos)
+	if (this->_request_buffer.find("Content-Length:") != std::string::npos)
 	{
 		if (parse_body() < 0)
 		{

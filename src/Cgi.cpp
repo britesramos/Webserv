@@ -35,13 +35,12 @@ void Cgi::creating_cgi_env(Client &client)
 	this->tmp_env.push_back("PATH_INFO=" + client.get_Request("url_path"));
 	this->tmp_env.push_back("QUERY_STRING=" + client.get_Request("query_string"));
 
-	if (method == "POST" && this->post == true) // TODO: CHECK is receiving the content correct
-	{
 		std::string content_lenght = client.get_Request("Content-Length:");
+		if(!content_lenght.empty())
 		this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
 		std::string content_type = client.get_Request("Content-Type:");
-		this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
-	}
+		if(!content_type.empty())
+			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
 
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
