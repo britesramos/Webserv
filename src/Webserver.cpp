@@ -155,7 +155,7 @@ int Webserver::main_loop()
 					ssize_t n = write(fd, buffer.data() + written, buffer.size() - written);
 					if (n > 0) {
 						written += n;
-						std::cout << YELLOW << "write() returned: " << n << ", written now: " << written << ", buffer.size(): " << buffer.size() << std::endl;
+						// std::cout << YELLOW << "write() returned: " << n << ", written now: " << written << ", buffer.size(): " << buffer.size() << std::endl;
 						client->set_cgiInputWritten(written);
 						if (written == buffer.size()) {
 							removeEpollFd(fd, EPOLLOUT);
@@ -165,7 +165,7 @@ int Webserver::main_loop()
 							std::cout << YELLOW << "Finished writing POST body to CGI for client fd: " << client->get_Client_socket() << std::endl;
 						}
 					} else if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-						std::cerr << "write() failed, errno: " << errno << " (" << strerror(errno) << ")" << std::endl;
+						// std::cerr << "write() failed, errno: " << errno << " (" << strerror(errno) << ")" << std::endl;
 						removeEpollFd(fd, EPOLLOUT);
 						close(fd);
 						client->set_cgiInputfd(-1);
@@ -218,20 +218,14 @@ void Webserver::timeout_checks() {
 	// 1. Client timeout
 	for (size_t s = 0; s < _servers.size(); ++s) {
 		auto& clients = _servers[s].getClients();
-		for (auto it = clients.begin(); it != clients.end(); ) {
+			for (auto it = clients.begin(); it != clients.end(); ) {
 			std::shared_ptr<Client> client = it->second;
+			auto current = it++; // increment iterator before erase
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->get_activity()).count();
-			
-			std::cout << YELLOW << "	Client " << client->get_Client_socket() << " elapsed: " << elapsed << "s" << std::endl;
 			if (elapsed > CLIENT_TIMEOUT) {
-				std::cout << RED << "Client " << client->get_Client_socket() << " timed out." << std::endl;
-				client->set_error_code("408");
-				// modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
-					send_response(client->get_Client_socket());
-					close_connection(client->get_Client_socket());
-				++it;
-			} else {
-				++it;
+				send_response(client->get_Client_socket());
+				close_connection(client->get_Client_socket());
+				clients.erase(current);
 			}
 		}
 	}
@@ -254,7 +248,6 @@ void Webserver::timeout_checks() {
 				}
 				client->set_error_code("504");
 				close(client->get_cgiOutputfd());
-				// modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 				it = cgi_fd_to_client_map.erase(it);
 				send_response(client->get_Client_socket());
 				close_connection(client->get_Client_socket());
