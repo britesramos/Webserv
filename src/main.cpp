@@ -51,8 +51,7 @@ int main(int argc, char **argv)
 			return (1);
 		}
 
-		// Debug: Print server FDs after initialization
-		// webserver.printServerFDs();
+		// webserver.printServerFDs(); //temp
 
 		// //2)Add server sockets to epoll interest list:
 		if (webserver.addServerSockets() == 1)
@@ -64,7 +63,7 @@ int main(int argc, char **argv)
 		if (webserver.main_loop() == 1)
 		{
 			webserver.clean_up();
-			//Don't these are closed once the ovbjects are destroyed?
+			//Don't these are closed once the objects are destroyed?
 			return (1);
 		}
 	}

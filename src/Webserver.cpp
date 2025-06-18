@@ -426,6 +426,7 @@ int Webserver::process_request(int client_fd){
 		return 1;
 	}
 	client->appendToBufferRequest(std::string(buffer, bytes_received));
+	//TODO: Check if it has content-leght instead of POST. For requests with body.
 	if (client->get_requestBuffer().find("POST") != std::string::npos && bytes_received != 0) {
         // Check if we've received the complete POST data
         size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
