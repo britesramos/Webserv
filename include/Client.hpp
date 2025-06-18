@@ -46,7 +46,6 @@ class Client {
 		std::unordered_map<std::string, std::string>	_Client_RequestMap; //Request
 		std::string										_response; //Response to be sent to the client
 		ServerConfig&									_server_config; //Server configuration for the client
-		// bool is_CGI_ready;
 		Cgi												*cgi;
 		int												CgiInputfd;
 		int												CgiOutputfd;

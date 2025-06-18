@@ -183,6 +183,7 @@ int Webserver::main_loop()
 						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+						delete client->get_cgi();
 					}
 					else if (result == -1) {
 						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
@@ -190,6 +191,7 @@ int Webserver::main_loop()
 						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+						delete client->get_cgi();
 					}
 				}
 				// 3. Handle client socket (EPOLLIN/EPOLLOUT)
@@ -224,8 +226,10 @@ void Webserver::timeout_checks() {
 			if (elapsed > CLIENT_TIMEOUT) {
 				std::cout << RED << "Client " << client->get_Client_socket() << " timed out." << std::endl;
 				client->set_error_code("408");
-				modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
-				break ;
+				// modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+					send_response(client->get_Client_socket());
+					close_connection(client->get_Client_socket());
+				++it;
 			} else {
 				++it;
 			}
@@ -250,8 +254,10 @@ void Webserver::timeout_checks() {
 				}
 				client->set_error_code("504");
 				close(client->get_cgiOutputfd());
-				modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
+				// modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 				it = cgi_fd_to_client_map.erase(it);
+				send_response(client->get_Client_socket());
+				close_connection(client->get_Client_socket());
 				continue;
 			}
 		}
@@ -275,7 +281,7 @@ int Webserver::send_response(int client_fd){
 		client->set_error_code("500"); //I am not sure if this can be checked. The way to send the response is trough send() if it doenst work for the correct response it will not work for the 500 html file either.
 		return 1; //Exit???
 	}
-	client->update_activity(); // fpr timeout checks
+	client->update_activity(); // for timeout checks
 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
 	return 0;
 }
@@ -349,7 +355,7 @@ bool Webserver::processing_cgi(std::shared_ptr<Client>& client, int client_fd)
 			return true;
 		}
 
-		if ((method == "POST" && client->get_cgi()->get_method_post())) {
+		if ((method == "POST" && client->get_cgi()->get_method_post()) || (method == "DELETE" && client->get_cgi()->get_method_del())) {
 			int cgi_in_fd = client->get_cgi()->get_cgi_in(WRITE);
 			client->set_cgiInputfd(cgi_in_fd);
 			client->set_cgiInputBuffer(client->get_Request("body"));
@@ -426,8 +432,7 @@ int Webserver::process_request(int client_fd){
 		return 1;
 	}
 	client->appendToBufferRequest(std::string(buffer, bytes_received));
-	//TODO: Check if it has content-leght instead of POST. For requests with body.
-	if (client->get_requestBuffer().find("POST") != std::string::npos && bytes_received != 0) {
+	if (client->get_requestBuffer().find("Content-Length: ") != std::string::npos && bytes_received != 0) {
         // Check if we've received the complete POST data
         size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
         if (content_length_pos != std::string::npos) {

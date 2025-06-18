@@ -32,7 +32,6 @@ Client& Client::operator=(const Client& other){
 		this->_response = other._response;
 		this->_server_config = other._server_config;
 		this->last_activity = other.last_activity;
-		// this->is_CGI_ready = other.is_CGI_ready;
 	}
 	return *this;
 }
@@ -117,7 +116,7 @@ int Client::parse_body(){
 	//Get the body (everything after the header):
 	std::string body = this->_request_buffer.substr(body_start);
 	this->_Client_RequestMap["body"] = body;
-	// printf("body: %s\n", body.c_str()); //temp
+	// printf("			body: %s\n", body.c_str()); //temp
 	return 0;
 }
 
@@ -479,11 +478,6 @@ std::string Client::get_Response(){
 std::string Client::get_error_code(){
 	return (this->_error_code);
 }
-
-// bool Client::get_is_cgi_ready()
-// {
-// 	return (this->is_CGI_ready);
-// }
 
 int Client::get_cgiOutputfd()
 {

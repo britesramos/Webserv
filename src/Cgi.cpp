@@ -12,7 +12,12 @@ Cgi::Cgi()
 
 Cgi::~Cgi()
 {
-
+	for (int i = 0; i < 2; ++i) {
+		if (cgi_in[i] > 0)
+			close(cgi_in[i]);
+		if (cgi_out[i] > 0)
+			close(cgi_out[i]);
+	}
 }
 
 int Cgi::get_cgi_in(int pos)
@@ -35,12 +40,12 @@ void Cgi::creating_cgi_env(Client &client)
 	this->tmp_env.push_back("PATH_INFO=" + client.get_Request("url_path"));
 	this->tmp_env.push_back("QUERY_STRING=" + client.get_Request("query_string"));
 
-		std::string content_lenght = client.get_Request("Content-Length:");
-		if(!content_lenght.empty())
-		this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
-		std::string content_type = client.get_Request("Content-Type:");
-		if(!content_type.empty())
-			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
+	std::string content_lenght = client.get_Request("Content-Length:");
+	if(!content_lenght.empty())
+	this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
+	std::string content_type = client.get_Request("Content-Type:");
+	if(!content_type.empty())
+		this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
 
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
@@ -101,14 +106,14 @@ void Cgi::run_cgi(Client& client)
 	if (this->pid == 0)
 	{
 		//child
-		if (method == "POST" && this->post == true)
+		if ((method == "POST" && this->post == true) || ( method == "DELETE" && this->del == true))
 		{
 			dup2(this->cgi_in[READ], STDIN_FILENO);
 			close(this->cgi_in[READ]);
 			close(this->cgi_in[WRITE]);
 		}
 		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
-		dup2(this->cgi_out[WRITE], STDERR_FILENO); // TODO: check this adding error from script to the pipe, all the errors are going to print on the browser x.x
+		dup2(this->cgi_out[WRITE], STDERR_FILENO); // adding error from script to the pipe, all the errors are going to print on the browser x.x
 		close(this->cgi_out[WRITE]);
 		close(this->cgi_out[READ]);
 
@@ -127,7 +132,7 @@ void Cgi::run_cgi(Client& client)
 		this->update_activity();
 		this->last_activity = this->start_time;
 
-		if (method == "POST" && this->post == true)
+		if ((method == "POST" && this->post == true) || ( method == "DELETE" && this->del == true))
 			close(this->cgi_in[READ]);
 		close(this->cgi_out[WRITE]);
 

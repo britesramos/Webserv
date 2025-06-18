@@ -8,38 +8,34 @@ import json
 
 UPLOAD_DIR = "www/uploads/"
 
-def print_response(msg):
-    # print("Content-type: text/html\r\n")
-    print(msg)
-
-method = os.environ.get("REQUEST_METHOD", "GET")
-
-if method == "DELETE":
+method = os.environ.get("REQUEST_METHOD", "")
+filename = ""
+if method in ("DELETE", "POST"):
     try:
         content_length = int(os.environ.get("CONTENT_LENGTH", 0))
         body = sys.stdin.read(content_length)
         data = json.loads(body)
         filename = data.get("filename", "").strip()
     except Exception as e:
-        print_response(f"Error: Invalid request body. {e}")
+        print(f"<p style='color:#d87c88;'>Error: Invalid request body. {e}</p>")
         sys.exit(0)
 else:
-    import cgi
-    form = cgi.FieldStorage()
-    filename = form.getfirst("filename", "").strip()
+    from urllib.parse import parse_qs
+    qs = os.environ.get("QUERY_STRING", "")
+    params = parse_qs(qs)
+    filename = params.get("filename", [""])[0].strip()
+
+filepath = os.path.join(UPLOAD_DIR, filename)
 
 if not filename:
-    print_response("Error: No filename provided.")
+    print("<p style='color:#d87c88;'>Error: No filename provided.</p>")
+elif "/" in filename or "\\" in filename:
+    print("<p style='color:#d87c88;'>Error: Invalid filename.</p>")
+elif not os.path.exists(filepath):
+    print("<p style='color:#d87c88;'>Error: File not found.</p>")
 else:
-    if "/" in filename or "\\" in filename:
-        print_response("Error: Invalid filename.")
-    else:
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        if os.path.exists(filepath):
-            try:
-                os.remove(filepath)
-                print_response(f"Pattern <b>{filename}</b> deleted successfully.")
-            except Exception as e:
-                print_response(f"Error: Could not delete file. {e}")
-        else:
-            print_response("Error: File not found.")
+    try:
+        os.remove(filepath)
+        print(f"<p style='color:#6b4c4c;'>Pattern <b>{filename}</b> deleted successfully.</p>")
+    except Exception as e:
+        print(f"<p style='color:#d87c88;'>Error: Could not delete file. {e}</p>")

@@ -612,11 +612,8 @@
           },
           body: JSON.stringify({ filename: filename })
         });
-        const contentType = response.headers.get('Content-Type');
         const data = await response.text();
-        if (!response.ok && contentType && contentType.includes('text/html')) {
-          document.documentElement.innerHTML = data;
-        } else if (!response.ok) {
+        if (data.includes('Error:')) {
           resultDiv.className = 'upload-result error';
           resultDiv.innerHTML = `❌ <span>${data}</span>`;
         } else {
