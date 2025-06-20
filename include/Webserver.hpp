@@ -7,9 +7,15 @@
 #include <sys/epoll.h>
 #include "../include/Cgi.hpp"
 #include "../include/Location.hpp"
+#include <fcntl.h>
+#include <chrono> // For timeouts
 
 #define SUCCESS 0
 #define FAIL 1
+
+#define TIMEOUT 3000 // miliseconds. it is good between 1 and 5 seconds
+#define CLIENT_TIMEOUT 30 // seconds
+#define CGI_TIMEOUT 10 // seconds
 
 class Webserver{
 	private:
@@ -18,8 +24,8 @@ class Webserver{
 		std::vector<Server> _servers;
 		std::unordered_map<int, int> client_server_map; // Map to store server-client relationships;
 		// std::unordered_map<int, std::string> client_response_map; //or in each client. This way we dont need to cleand this map as well.
-		std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map; //Map to store CGI file descriptors and their corresponding clients
-		//timer.
+		std::map<int, std::shared_ptr<Client>> cgi_fd_to_client_map;        // For CGI output (read)
+		std::map<int, std::shared_ptr<Client>> cgi_input_fd_to_client_map;  // For CGI input (write)
 
 	public:
 		Webserver();
@@ -29,6 +35,8 @@ class Webserver{
 		int init_epoll();
 		int addServerSockets();
 		int addEpollFd(int new_connection_socket_fd, uint32_t events);
+		int removeEpollFd(int socket_fd, uint32_t events);
+		int modifyEpollEvent(int socket_fd, uint32_t events);
 		int epoll_wait_util(struct epoll_event* events);
 
 		//Server methods
@@ -41,22 +49,13 @@ class Webserver{
 		int send_response(int client_fd);
 
 		void set_cgi_fd_to_client_map(int cgi_fd, std::shared_ptr<Client> client);
+		void set_cgi_input_fd_to_client_map(int cgi_in_fd, std::shared_ptr<Client> client);
 
 		//Handling Responses
 		// int handle_cgi_request(int client_fd, const std::string& url_path);
-		// int handle_get_request(std::shared_ptr<Client>& client, const std::string& url_path);
-		// bool is_method_allowed(std::shared_ptr<Client>& client, const std::string& url_path, std::string method);
-		// int handle_post_request(std::shared_ptr<Client>& client, const std::string& url_path);
-		// int handle_delete_request(int client_fd, const std::string& url_path);
-		// void handle_success(std::shared_ptr<Client>& client);
 		// int handle_error(std::shared_ptr<Client>& client);
-		// std::string build_status_line(std::shared_ptr<Client>& client, std::string status_code, std::string status_message);
-		// std::string build_body(std::shared_ptr<Client>& client, const std::string& url_path, int flag);
-		// std::string findRoot(int client_fd, const std::string& url_path);
 		std::string build_header(std::string body);
-		void close_connection(std::shared_ptr<Client>& client);
-		//Handle Post Request Method
-		// int handle_post_form_request(std::shared_ptr<Client>& client, const std::string& url_path);
+		void close_connection(int connection_fd);
 
 		//Debug methods
 		void printServerFDs() const;
@@ -69,9 +68,11 @@ class Webserver{
 		Location getLocationByPath(int client_fd, const std::string& url_path);
 
 		int get_epoll_fd() const;
+		void timeout_checks();
 
 		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
-
+		std::shared_ptr<Client> get_client_by_cgi_input_fd(int cgi_in_fd);
+		bool processing_cgi(std::shared_ptr<Client>& client, int client_fd);
 		//Clean_up_method
 		void clean_up();
 };

@@ -2,15 +2,22 @@
 
 Cgi::Cgi()
 {
-	this->code_status = 200;
 	this->del = false;
 	this->get = false;
 	this->post = false;
+	this->config_autoindex = false;
+	this->last_activity = std::chrono::steady_clock::now();
+	this->start_time = std::chrono::steady_clock::now();
 }
 
 Cgi::~Cgi()
 {
-
+	for (int i = 0; i < 2; ++i) {
+		if (cgi_in[i] > 0)
+			close(cgi_in[i]);
+		if (cgi_out[i] > 0)
+			close(cgi_out[i]);
+	}
 }
 
 int Cgi::get_cgi_in(int pos)
@@ -23,7 +30,7 @@ int Cgi::get_cgi_out(int pos)
 	return this->cgi_out[pos];
 }
 
-void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
+void Cgi::creating_cgi_env(Client &client)
 {
 	std::string method = client.get_Request("method");
 	this->tmp_env.push_back("REQUEST_METHOD=" + method);
@@ -33,26 +40,19 @@ void Cgi::creating_cgi_env(Client &client) // TODO: REVIEW this function
 	this->tmp_env.push_back("PATH_INFO=" + client.get_Request("url_path"));
 	this->tmp_env.push_back("QUERY_STRING=" + client.get_Request("query_string"));
 
-	if (method == "POST" && this->post == true)
-	{
-		std::string content_lenght = client.get_Request("content_length");
-		if (!content_lenght.empty())
-		{
-			this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
-		}
-		std::string content_type = client.get_Request("content_type");
-		if (!content_type.empty()) {
-			this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
-		}
-	}
+	std::string content_lenght = client.get_Request("Content-Length:");
+	if(!content_lenght.empty())
+	this->tmp_env.push_back("CONTENT_LENGTH=" + content_lenght);
+	std::string content_type = client.get_Request("Content-Type:");
+	if(!content_type.empty())
+		this->tmp_env.push_back("CONTENT_TYPE=" + content_type);
 
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
 
-	// for (size_t i = 0; i < this->env.size() && env[i] != nullptr; ++i) {
-	// 	std::cout << "				" << this->env[i] << std::endl;
-	// }
+	// for (size_t i = 0; i < this->env.size(); ++i)
+    // std::cerr <<  YELLOW <<"			CGI ENV: " << this->env[i] << std::endl;
 }
 
 void Cgi::start_cgi(Location config)
@@ -69,15 +69,24 @@ void Cgi::start_cgi(Location config)
 			this->del = true;
 	}
 	this->config_autoindex = config.getAutoindex();
-	// if (config_autoindex == true && (client.get_Request("url_path").find(".py") == std::string::npos))
-	// {
-	// 	client.set_error_code("404");
-	// 	return ;
-	// }
 
-	if (pipe(cgi_in) == -1 || pipe(cgi_out) == -1)
+	if (this->post)
 	{
-		perror("Pipe");
+		if (pipe(this->cgi_in) == -1)
+		{
+			perror("Input Pipe");
+			return ;
+		}
+	}
+
+	if (pipe(cgi_out) == -1)
+	{
+		if (this->post)
+		{
+			close(this->cgi_in[READ]);
+			close(this->cgi_in[WRITE]);
+		}
+		perror("Output Pipe");
 		return ;
 	}
 }
@@ -85,20 +94,24 @@ void Cgi::start_cgi(Location config)
 
 void Cgi::run_cgi(Client& client)
 {
-	pid_t pid;
+	std::string method = client.get_Request("method");
 
-	pid = fork();
-	if (pid == -1)
+	this->pid = fork();
+	if (this->pid == -1)
 	{
 		perror("Fork");
 		return ;
 	}
 
-	if (pid == 0)
+	if (this->pid == 0)
 	{
 		//child
-		// dup2(this->cgi_in[READ], STDIN_FILENO);
-		// close(this->cgi_in[WRITE]);
+		if ((method == "POST" && this->post == true) || ( method == "DELETE" && this->del == true))
+		{
+			dup2(this->cgi_in[READ], STDIN_FILENO);
+			close(this->cgi_in[READ]);
+			close(this->cgi_in[WRITE]);
+		}
 		dup2(this->cgi_out[WRITE], STDOUT_FILENO);
 		dup2(this->cgi_out[WRITE], STDERR_FILENO); // adding error from script to the pipe, all the errors are going to print on the browser x.x
 		close(this->cgi_out[WRITE]);
@@ -116,7 +129,12 @@ void Cgi::run_cgi(Client& client)
 	else
 	{
 		//parent
-		close(this->cgi_out[WRITE]); // TODO: return pipe for the write function 
+		this->update_activity();
+		this->last_activity = this->start_time;
+
+		if ((method == "POST" && this->post == true) || ( method == "DELETE" && this->del == true))
+			close(this->cgi_in[READ]);
+		close(this->cgi_out[WRITE]);
 
 		client.set_error_code("200");
 		int status;
@@ -137,12 +155,44 @@ void Cgi::run_cgi(Client& client)
 	}
 }
 
-	void Cgi::set_code_status(int code)
-	{
-		this->code_status = code;
-	}
+bool Cgi::get_method_del() const
+{
+	return (this->del);
+}
 
-	int Cgi::get_code_status() const
-	{
-		return (this->code_status);
-	}
+bool Cgi::get_method_get() const
+{
+	return (this->get);
+}
+
+bool Cgi::get_method_post() const
+{
+	return (this->post);
+}
+
+bool Cgi::get_config_autoindex() const
+{
+	return (this->config_autoindex);
+}
+
+pid_t Cgi::get_pid() const
+{
+	return this->pid;
+}
+
+std::string Cgi::get_config_root() const
+{ 
+	return this->config_root;
+}
+
+void Cgi::update_activity() {
+	last_activity = std::chrono::steady_clock::now();
+}
+
+std::chrono::steady_clock::time_point Cgi::get_activity() const {
+	return this->last_activity;
+}
+
+std::chrono::steady_clock::time_point Cgi::get_start_time() const {
+	return this->start_time;
+}

@@ -1,16 +1,41 @@
 #!/usr/bin/python3
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import os
+import sys
+import json
 
-print("Content-type:text/html\r\n\r\n)
+UPLOAD_DIR = "www/uploads/"
 
-if os.path.exists("demofile.txt"):
-  os.remove("demofile.txt")
+method = os.environ.get("REQUEST_METHOD", "")
+filename = ""
+if method in ("DELETE", "POST"):
+    try:
+        content_length = int(os.environ.get("CONTENT_LENGTH", 0))
+        body = sys.stdin.read(content_length)
+        data = json.loads(body)
+        filename = data.get("filename", "").strip()
+    except Exception as e:
+        print(f"<p style='color:#d87c88;'>Error: Invalid request body. {e}</p>")
+        sys.exit(0)
 else:
-  print("<h1>No file uploaded to be delete</h1>")
+    from urllib.parse import parse_qs
+    qs = os.environ.get("QUERY_STRING", "")
+    params = parse_qs(qs)
+    filename = params.get("filename", [""])[0].strip()
 
-print("<br>")
-print("<br>")
-print("<a href=\"../home_page.html\">Return home</a>")
+filepath = os.path.join(UPLOAD_DIR, filename)
 
-print("</body></html>")
+if not filename:
+    print("<p style='color:#d87c88;'>Error: No filename provided.</p>")
+elif "/" in filename or "\\" in filename:
+    print("<p style='color:#d87c88;'>Error: Invalid filename.</p>")
+elif not os.path.exists(filepath):
+    print("<p style='color:#d87c88;'>Error: File not found.</p>")
+else:
+    try:
+        os.remove(filepath)
+        print(f"<p style='color:#6b4c4c;'>Pattern <b>{filename}</b> deleted successfully.</p>")
+    except Exception as e:
+        print(f"<p style='color:#d87c88;'>Error: Could not delete file. {e}</p>")
