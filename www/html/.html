@@ -360,10 +360,10 @@
   <div class="overlay"></div>
   <div class="unsubscribe-form" id="unsubscribeForm">
     <h2 class="form-title">Unsubscribe</h2>
-    <p class="form-description">Please enter your username to unsubscribe</p>
+    <p class="form-description">Please enter your e-mail to unsubscribe</p>
     <div class="form-group">
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username" required>
+      <label for="email">E-mail</label>
+      <input type="text" id="unsubscribeEmail" name="email" required>
     </div>
     <button onclick="confirmUnsubscribe()" class="button">Unsubscribe</button>
     <button onclick="closeUnsubscribeForm()" class="button" style="background-color: #6b4c4c;">Cancel</button>
@@ -419,7 +419,7 @@
     async function handleUnsubscribe() {
       if (confirm('Are you sure you want to unsubscribe? This will delete your account and patterns.')) {
         try {
-          const response = await fetch('/signin/form_submission.csv', {
+          const response = await fetch('/signin/form_submissions.csv', {
             method: 'DELETE',
           });
           const contentType = response.headers.get('Content-Type');
@@ -461,21 +461,21 @@
     }
 
     async function confirmUnsubscribe() {
-    const username = document.getElementById('username').value;
+    const email = document.getElementById('unsubscribeEmail').value;
     
-    if (!username) {
-        alert('Please enter your username');
+    if (!email) {
+        alert('Please enter your email');
         return;
     }
 
     if (confirm('Are you sure you want to unsubscribe? This will delete your account.')) {
         try {
-            const response = await fetch('/signin/form_submission.csv', {
+            const response = await fetch('/signin/form_submissions.csv', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username: username })
+                body: JSON.stringify({ email: email })
             });
 
             const contentType = response.headers.get('Content-Type');
@@ -483,7 +483,7 @@
             if (!response.ok && contentType && contentType.includes('text/html')) {
                 document.documentElement.innerHTML = htmlContent;
             } else if (!response.ok) {
-                alert('Failed to unsubscribe. Please check your username and try again.');
+                alert('Failed to unsubscribe. Please check your email and try again.');
             } else {
                 document.documentElement.innerHTML = htmlContent;
             }

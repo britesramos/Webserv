@@ -279,26 +279,31 @@ int Webserver::send_response(int client_fd){
 	return 0;
 }
 
+//Refactor this method. Not needing SUCCESS return anymore. I think.
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
+	if (client->get_error_code() != "200"){
+		modifyEpollEvent(client_fd, EPOLLOUT);
+		return 1;
+	}
 	if (client->get_Request("method") == "GET"){
 		if (client->handle_get_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		else
-			close_connection(client_fd);
+		// else
+		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		else
-			close_connection(client_fd);
+		// else
+		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "DELETE"){
 		if (client->handle_delete_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		else
-			close_connection(client_fd);
+		// else
+		// 	close_connection(client_fd);
 	}
 	return 0;
 }
@@ -435,6 +440,7 @@ int Webserver::process_request(int client_fd){
             if (header_end != std::string::npos) {
                 size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
                 if (body_length >= content_length) {
+					std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
                     // We have received all the POST data, proceed to build response
                     client->parseClientRequest();
 					if (processing_cgi(client, client_fd))

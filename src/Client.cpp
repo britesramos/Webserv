@@ -133,7 +133,14 @@ int Client::parseClientRequest(){
 	}
 	if (this->_request_buffer.find("Content-Length:") != std::string::npos)
 	{
-		if (parse_body() < 0)
+		size_t content_lenght = std::stoul(this->_Client_RequestMap["Content-Length:"]);
+		if (content_lenght > static_cast<size_t>(_server_config.getMaxClientSize()))
+		{
+			std::cout << RED << "Content lenght exceeds maximum client size." << std::endl;
+			this->_error_code = "413";
+			return -1;
+		}
+		else if (parse_body() < 0)
 		{
 			std::cerr << RED << "Error parsing body of request" << std::endl;
 			return -1;
@@ -165,15 +172,79 @@ int Client::handle_get_request(){
 
 int Client::handle_delete_request(){
 	std::string url_path = this->get_Request("url_path");
-	std::cout << "URL_PATH:::: " << url_path << std::endl;
+	std::cout << YELLOW << "URL_PATH:::: " << url_path << std::endl;
 	std::string body = this->get_Request("body");
+	std::cout << YELLOW << "BODY:::: " << body << std::endl;
 	if (is_method_allowed(url_path, "DELETE") == true){
-		//1)if url_path doesnt exist return with error
-		//2)if email doesnt exist return message that this email doesnt exist on data base
-		//3)
+		std::string root = findRoot(url_path);
+		std::string directory_path = root + url_path;
+		std::cout << YELLOW << directory_path << std::endl;		
 
-		//If it has body delete entry in that path.
-		//If no body delete file.
+		//1)If directory_path doesn't exist return with error:
+		if (!std::filesystem::exists(directory_path)){
+			std::cout << RED << "404 | File/Directory path not found: " << directory_path << std::endl;
+			this->_error_code = "404";
+			return 0;
+		}
+		//2)If delete request doesn't have body, delete file/directory path:
+		if (this->_Client_RequestMap["body"].empty())
+		{
+			std::error_code error;
+			if(std::filesystem::is_directory(directory_path))
+				std::filesystem::remove_all(directory_path, error);
+			else
+				std::filesystem::remove(directory_path, error);
+			if (error){
+				std::cout << RED << "Failed to delete: " << directory_path << std::endl;
+				this->_error_code = "500";
+				return 0;
+			}
+		}
+		//3)Look for email in database/delete if found:
+		if (this->_Client_RequestMap["Content-Type:"] == "application/json" && !body.empty()){
+			std::string email;
+			size_t end_pos = body.find_last_of("\"");
+			size_t newstr_len = body.length() - (body.length() - end_pos) - 10;
+			if (end_pos != std::string::npos)
+				email = body.substr(10, newstr_len);
+			else
+				return 1;
+			std::cout << YELLOW << "EMAIL: " << email << std::endl;
+			
+			std::ifstream read_file(directory_path.c_str());
+			if (!read_file.is_open()){
+				std::cout << RED << "Failed to open file to reading: " << directory_path << std::endl;
+				this->_error_code = "500";
+				return 0;
+			}
+			std::stringstream buffer;
+			buffer << read_file.rdbuf();
+			std::string content = buffer.str();
+			read_file.close();
+			if(content.find(email) != std::string::npos){
+				std::stringstream new_content;
+				std::string line;
+				std::istringstream content_stream(content);
+
+				while (std::getline(content_stream, line)) {
+					if (line.find(email) == std::string::npos) {
+						new_content << line << "\n";
+					}
+				}
+				std::ofstream write_file(directory_path.c_str(), std::ios::trunc);
+				if (!write_file.is_open()){
+					std::cout << RED << "Failed to open file for writing: " << directory_path << std::endl;
+					this->_error_code = "500";
+					return 0; 
+				}
+				write_file << new_content.str();
+				write_file.close();
+				std::cout << GREEN << "Successfully delted entry with email: " << email << std::endl;
+			}
+			else
+				std::cout << RED << "This email does not exist in our database. It can't be deleted." << std::endl;
+
+		}
 		handle_success();
 	}
 	return 0;
@@ -183,7 +254,12 @@ int Client::handle_post_request(){
 	std::string url_path = this->get_Request("url_path");
 	std::string root = findRoot(url_path);
 	if (is_method_allowed(url_path, "POST") == true){
-		//TODO: Check content type.
+		//Check content type webserver supported:
+		if (this->get_Request("Content-Type:") != "application/x-www-form-urlencoded"){
+			std::cout << RED << "415 | Unsupported Media Type" << std::endl;
+			this->_error_code = "415";
+			return 0;
+		}
 		//1)If folder doesnt exist create:
 		//1.1) Extract folder path:
 		size_t last_slash = url_path.find_last_of('/');
@@ -198,7 +274,7 @@ int Client::handle_post_request(){
 			if(mkdir(directory_path.c_str(), 0777) == -1){
 				std::cout << RED << "Failed to create directory: " << directory_path << std::endl;
 				this->_error_code = "500";
-				return 1;
+				return 0;
 			}
 		}
 		//1.4) Create file if it doesnt exist:
@@ -207,7 +283,7 @@ int Client::handle_post_request(){
 		if (!file.is_open()){
 			std::cout << RED << "Failed to open/create file: " << file_path << std::endl;
 			this->_error_code = "500";
-			return 1;
+			return 0;
 		}
 		file.close();
 		//2)If entry doenst exist already include it:
@@ -247,7 +323,7 @@ int Client::handle_post_request(){
 		if (!read_file.is_open()) {
 			std::cout << RED << "Failed to open file for reading: " << file_path << std::endl;
 			this->_error_code = "500";
-			return 1;
+			return 0;
 		}
 		std::stringstream buffer;
 		buffer << read_file.rdbuf();
@@ -264,7 +340,7 @@ int Client::handle_post_request(){
 			if (!write_file.is_open()) {
 				std::cout << RED << "Failed to open file for writing: " << file_path << std::endl;
 				this->_error_code = "500";
-				return 1;
+				return 0;
 			}
 			write_file << to_look_for << "\n";
 			write_file.close();
@@ -420,14 +496,12 @@ bool Client::is_method_allowed(const std::string& url_path, std::string method){
 	}
 
 	const Location& location = locations.at(best_match);
-	// Location location = locations[url_path];
 	const std::vector<std::string> allowed_methods = location.get_methods();
 	for (size_t i = 0; i < allowed_methods.size(); ++i){
-		std::cout << "method: " << allowed_methods[i] << std::endl; //TEMP
 		if (allowed_methods[i] == method)
 			return true;
 	}
-	std::cout << RED << "METHOD NOT ALLOWED!" << std::endl; //What happens in this case? The website doesnt change?
+	std::cout << RED << "METHOD NOT ALLOWED!" << std::endl;
 	this->_error_code = "405";
 	return false;
 }
@@ -438,7 +512,7 @@ void Client::handle_success(){
 	std::string status_line = build_status_line("200", "OK");
 	std::string response = status_line + header;
 	response += body;
-	std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	// std::cout << "SUCCESS RESPONSE: " << response << std::endl;
 	this->_response = response;
 }
 

@@ -1,6 +1,6 @@
 NAME = webserv
 
-CPPFLAGS = -Wall -Werror -Wextra -std=c++11
+CPPFLAGS = -Wall -Werror -Wextra -std=c++17
 
 WHITE_B = \033[1;37m
 PINK = \033[35m

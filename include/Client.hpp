@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <chrono> // For timeouts
+#include <filesystem>
 
 #include "../include/ServerConfig.hpp"
 // #include "../include/Cgi.hpp"
