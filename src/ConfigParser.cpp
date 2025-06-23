@@ -159,8 +159,8 @@ bool ConfigParser::config_file_parsing(std::string input)
 			}
 			else
 			{
-				if(!is_static_content_load(str, current_location))
-				return false;
+				if(is_static_content_load(str, current_location) == false)
+				    return false;
 			}
 		}
 		else
@@ -189,19 +189,19 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 			return false;
 		if (key == "root")
 		{
-			if (is_value_empty(key, value))
+			if (is_value_empty(key, value) == true)
 				return false;
 			current_location.setRoot(value);
 		}
 		else if (key == "index")
 		{
-			if (is_value_empty(key, value))
+			if (is_value_empty(key, value) == true)
 				return false;
 			current_location.setIndex(value);
 		}
 		else if (key == "autoindex")
 		{
-			if (is_value_empty(key, value))
+			if (is_value_empty(key, value) == true)
 				return false;
 			bool enable;
 			if (value == "off")
@@ -229,7 +229,7 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 		}
 		else if (key == "return")
 		{
-			if (is_value_empty(key, value))
+			if (is_value_empty(key, value) == true)
 				return false;
 			std::vector<std::string> temp = split_by_whitespace(value);
 			if (temp.size() != 2 || !is_digit_valid(temp[0]) || temp[0].empty() || temp[1].empty())

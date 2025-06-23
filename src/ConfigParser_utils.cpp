@@ -64,6 +64,9 @@ void ConfigParser::remove_comments(std::string &str)
 
 bool ConfigParser::is_value_empty(std::string key, std::string value)
 {
+    if (value.back() == ';')
+        value.pop_back();
+    trim_spaces(value);
 	if (value.empty())
 	{
 		std::cerr << key << " cannot be set as empty" << std::endl;

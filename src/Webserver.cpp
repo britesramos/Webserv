@@ -279,8 +279,6 @@ int Webserver::send_response(int client_fd){
 	return 0;
 }
 
-
-
 //Refactor this method. Not needing SUCCESS return anymore. I think.
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);

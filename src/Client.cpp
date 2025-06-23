@@ -528,6 +528,15 @@ void Client::handle_error(){
 	this->_response = response;
 }
 
+void Client::handle_autoindex(){
+	std::string body = build_body(this->findRoot(this->get_Request("url_path")) + this->get_Request("url_path"), 1);
+	std::string header = build_header(body);
+	std::string status_line = build_status_line("200", "OK");
+	std::string response = status_line + header;
+	response += body;
+	// std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	this->_response = response;
+}
 
 //***Getters***//
 int Client::get_Client_socket(){

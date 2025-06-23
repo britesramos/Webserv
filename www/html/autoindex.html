@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Directory Listing</title>
+  <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fff8f0, #fcebea);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 20px 0 20px;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-size: 3em;
+      color: #a05270;
+      margin: 0;
+    }
+    p {
+      font-size: 1.3em;
+      color: #6b4c4c;
+      margin-top: 10px;
+    }
+    .file-list {
+      list-style-type: none;
+      padding: 0;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .file-item {
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin: 10px 0;
+      transition: background-color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .file-item:hover {
+      background-color: #fcebea;
+    }
+    .file-link {
+      text-decoration: none;
+      color: #6b4c4c;
+      font-size: 1.2em;
+      word-break: break-all;
+    }
+    .file-link:hover {
+      color: #d87c88;
+    }
+    .file-size {
+      color: #a05270;
+      font-size: 0.95em;
+      margin-left: 20px;
+      min-width: 80px;
+      text-align: right;
+    }
+    .footer {
+      width: calc(100% + 40px);
+      margin-left: -20px;
+      padding: 20px;
+      background-color: #a05270;
+      color: #fff;
+      text-align: center;
+      margin-top: 40px;
+      box-shadow: 0 -4px 12px rgba(160, 82, 112, 0.2);
+    }
+    .footer p {
+      color: #fff;
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+    .heart {
+      color: #fff;
+      animation: heartbeat 1.5s ease infinite;
+    }
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Directory Listing</h1>
+    <p>Browse files and folders in this directory:</p>
+  </header>
+  <ul class="file-list">
+    <!-- Example static entries, replace with server-side generated list -->
+    <li class="file-item">
+      <a href=".." class="file-link">../</a>
+      <span class="file-size"></span>
+    </li>
+    <li class="file-item">
+      <a href="file1.txt" class="file-link">file1.txt</a>
+      <span class="file-size">2 KB</span>
+    </li>
+    <li class="file-item">
+      <a href="file2.jpg" class="file-link">file2.jpg</a>
+      <span class="file-size">1.1 MB</span>
+    </li>
+    <li class="file-item">
+      <a href="directory1/" class="file-link">directory1/</a>
+      <span class="file-size">—</span>
+    </li>
+    <li class="file-item">
+      <a href="directory2/" class="file-link">directory2/</a>
+      <span class="file-size">—</span>
+    </li>
+  </ul>
+  <div class="footer">
+    <p>Autoindex powered by <span class="heart">♥</span> Yarn Server</p>
+  </div>
+</body>
+</html>

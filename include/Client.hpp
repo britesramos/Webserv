@@ -76,6 +76,7 @@ class Client {
 		void handle_success();
 		int handle_delete_request();
 		int handle_cgi_response(Cgi& cgi);
+        void handle_autoindex();
 
 		bool is_method_allowed(const std::string& url_path, std::string method);
 		std::string findRoot(const std::string& url_path);
@@ -89,7 +90,6 @@ class Client {
 		const std::unordered_map<std::string, std::string>& get_RequestMap() const;
 		std::string get_Request(std::string key);
 		std::string get_Response();
-		// bool get_is_cgi_ready();
 		int get_cgiOutputfd();
 		int get_cgiInputfd();
 		Cgi* get_cgi();
@@ -101,7 +101,6 @@ class Client {
 		void set_Client_socket(int socket_fd);
 		void set_error_code(std::string error_code);
 		void set_Request(std::string key, std::string value);
-		// void set_is_cgi_ready(bool value);
 		void set_cgiOutputfd(int fd);
 		void set_cgiInputfd(int fd);
 		void set_cgi(Cgi* cgi);
