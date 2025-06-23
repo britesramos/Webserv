@@ -279,10 +279,21 @@ int Webserver::send_response(int client_fd){
 	return 0;
 }
 
+
+
 //Refactor this method. Not needing SUCCESS return anymore. I think.
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
+
+    std::string path = client->findRoot(client->get_Request("url_path")) + client->get_Request("url_path");
+    // std::cout << "      PATH: " << path << std::endl;
+    if (access(path.c_str(), F_OK) != 0) {
+        std::cerr << RED << "Path not found: " << path << RESET << std::endl;
+        client->set_error_code("404");
+        modifyEpollEvent(client_fd, EPOLLOUT); // should remove and leave it for the second if to take care?
+        return 1;
+    }
 	if (client->get_error_code() != "200"){
 		modifyEpollEvent(client_fd, EPOLLOUT);
 		return 1;
