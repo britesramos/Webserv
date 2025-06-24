@@ -278,6 +278,45 @@ int Webserver::send_response(int client_fd){
 	return 0;
 }
 
+static bool handle_autoindex(std::shared_ptr<Client>& client)
+{
+	std::string url_path = client->get_Request("url_path");
+	std::string full_path = client->findRoot(url_path) + url_path;
+
+	struct stat buffer;
+	if (stat(full_path.c_str(), &buffer) != 0) {
+		std::cerr << YELLOW << "Path not found: " << full_path << RESET << std::endl;
+		client->set_error_code("404");
+		return false;
+	}
+
+	if (!S_ISDIR(buffer.st_mode)) {
+		std::cout << YELLOW << "	it is not a directory!" << RESET << std::endl;
+		return true;
+	}
+
+	if (client->is_method_allowed(url_path, "GET") == false) {
+		client->set_error_code("405");
+		return false;
+	}
+
+	std::string index_file = client->find_Index(url_path);
+	std::string index_path = full_path + (full_path.back() == '/' ? "" : "/") + index_file;
+	if (!index_file.empty() && access(index_path.c_str(), F_OK) == 0) {
+		client->handle_index_page(index_path);
+		return false;
+	}
+
+	bool autoindex = client->autoindex_return(url_path);
+	if (!autoindex){
+		client->set_error_code("403");
+		return false;
+	}
+	client->handle_autoindex_page(full_path, url_path);
+	return false;
+}
+
+
 //Refactor this method. Not needing SUCCESS return anymore. I think.
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
@@ -291,6 +330,13 @@ int Webserver::build_response(int client_fd){
         modifyEpollEvent(client_fd, EPOLLOUT); // should remove and leave it for the second if to take care?
         return 1;
     }
+	if (handle_autoindex(client) == false)
+	{
+		send_response(client->get_Client_socket()); // modify to epoll was working the same
+		close_connection(client->get_Client_socket());
+		return 0;
+	}
+
 	if (client->get_error_code() != "200"){
 		modifyEpollEvent(client_fd, EPOLLOUT);
 		return 1;

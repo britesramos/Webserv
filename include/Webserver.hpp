@@ -9,6 +9,7 @@
 #include "../include/Location.hpp"
 #include <fcntl.h>
 #include <chrono> // For timeouts
+#include <sys/stat.h>
 
 #define SUCCESS 0
 #define FAIL 1

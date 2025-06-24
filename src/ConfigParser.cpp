@@ -197,6 +197,11 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 		{
 			if (is_value_empty(key, value) == true)
 				return false;
+			if (value.compare(value.size() - 5, 5, ".html") != 0)
+			{
+				std::cout << "Invalid extention for INDEX, change to .html" << std::endl;
+				return false;
+			}
 			current_location.setIndex(value);
 		}
 		else if (key == "autoindex")

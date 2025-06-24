@@ -483,6 +483,55 @@ std::string Client::build_body(const std::string& url_path, int flag){
 	return body;
 }
 
+bool Client::autoindex_return(const std::string& url_path){
+
+	bool autoindex;
+	std::unordered_map<std::string, Location> locations; // TODO: create a function for this locations block best match
+	locations = this->_server_config.getLocations();
+	
+	std::string best_match = "";
+	for (const auto& pair : locations) {
+		const std::string& path = pair.first;
+		if (url_path.compare(0, path.length(), path) == 0 && 
+		    (url_path.length() == path.length() || url_path[path.length()] == '/' || path == "/")) {
+			if (path.length() > best_match.length())
+				best_match = path;
+		}
+	}
+
+	const Location& location = locations.at(best_match);
+
+	autoindex = location.getAutoindex();
+
+	return autoindex;
+}
+
+std::string Client::find_Index(const std::string& url_path){
+
+	std::string index;
+	std::unordered_map<std::string, Location> locations;
+	locations = this->_server_config.getLocations();
+	
+	std::string best_match = "";
+	for (const auto& pair : locations) {
+		const std::string& path = pair.first;
+		if (url_path.compare(0, path.length(), path) == 0 && 
+		    (url_path.length() == path.length() || url_path[path.length()] == '/' || path == "/")) {
+			if (path.length() > best_match.length())
+				best_match = path;
+		}
+	}
+
+	const Location& location = locations.at(best_match);
+
+	index = location.getIndex();
+	if (index.empty()){
+		std::cerr << YELLOW << "No Page Index Set for Directory " << url_path << std::endl;
+	}
+
+	return index;
+}
+
 bool Client::is_method_allowed(const std::string& url_path, std::string method){
 	std::unordered_map<std::string, Location> locations = this->_server_config.getLocations();
 
@@ -505,6 +554,45 @@ bool Client::is_method_allowed(const std::string& url_path, std::string method){
 	std::cout << RED << "METHOD NOT ALLOWED!" << std::endl;
 	this->_error_code = "405";
 	return false;
+}
+
+static std::string generate_autoindex_html(const std::string& dir_path, const std::string& url_path) {
+    DIR* dir = opendir(dir_path.c_str());
+    if (!dir)
+		return "<html><body>Unable to open directory</body></html>";
+
+    std::stringstream html;
+    html << "<html><head><title>Index of " << url_path << "</title></head><body>";
+    html << "<h1>Index of " << url_path << "</h1><ul>";
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+        if (name == ".") continue;
+        std::string link = url_path + (url_path.back() == '/' ? "" : "/") + name;
+        html << "<li><a href=\"" << link << "\">" << name << "</a></li>";
+    }
+    closedir(dir);
+    html << "</ul></body></html>";
+    return html.str();
+}
+
+void Client::handle_autoindex_page(const std::string& dir_path, const std::string& url_path) {
+    std::string body = generate_autoindex_html(dir_path, url_path);
+    std::string header = build_header(body);
+    std::string status_line = build_status_line("200", "OK");
+    std::string response = status_line + header + body;
+    this->_response = response;
+}
+
+void Client::handle_index_page(std::string full_path){
+	std::string body = build_body(full_path, 1);
+	std::string header = build_header(body);
+	std::string status_line = build_status_line("200", "OK");
+	std::string response = status_line + header;
+	response += body;
+	// std::cout << "SUCCESS RESPONSE: " << response << std::endl;
+	this->_response = response;
 }
 
 void Client::handle_success(){

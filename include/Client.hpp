@@ -9,6 +9,7 @@
 #include <string.h>
 #include <chrono> // For timeouts
 #include <filesystem>
+#include <dirent.h>
 
 #include "../include/ServerConfig.hpp"
 // #include "../include/Cgi.hpp"
@@ -110,6 +111,10 @@ class Client {
 		void clearBuffer();
 
 
+		std::string find_Index(const std::string& url_path);
+		bool autoindex_return(const std::string& url_path);
+		void handle_autoindex_page(const std::string& dir_path, const std::string& url_path);
+		void handle_index_page(std::string full_path);
 		void update_activity();
 		std::chrono::steady_clock::time_point get_activity() const;
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Success</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: #f9fafb;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      z-index: 10;
+      padding: 2rem;
+    }
+
+    .title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #a05270;
+      margin-bottom: 1rem;
+    }
+
+    .message {
+      font-size: 1.25rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+
+    .gif {
+      width: 300px;
+      max-width: 80%;
+      height: auto;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    a.home-link {
+      display: inline-block;
+      text-decoration: none;
+      background-color: #a05270;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      transition: background-color 0.3s;
+      font-weight: bold;
+    }
+
+    a.home-link:hover {
+      background-color: #87445e;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="container">
+    <div class="title">So much yarn, sooo little time</div>
+    <div class="message">Let's use some yarn!</div>
+    <img src="/images/wilma-flintstone.gif" alt="Knitting" class="gif">
+    <a href="/" class="home-link">Go Back Home</a>
+  </div>
+</body>
+</html>
