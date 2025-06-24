@@ -5,6 +5,7 @@ Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket
 	this->_error_code = "200";
 	this->last_activity = std::chrono::steady_clock::now();
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
+	// this->cgi = new Cgi();
 }
 
 Client::~Client(){
@@ -581,6 +582,20 @@ std::string Client::get_requestBuffer(){
 	return this->_request_buffer;
 }
 
+std::string& Client::get_cgiInputBuffer()
+{
+	return this->cgi_input_buffer;
+}
+
+size_t Client::get_cgiInputWritten() const
+{
+	return this->cgi_input_written;
+}
+
+std::chrono::steady_clock::time_point Client::get_activity() const {
+	return this->last_activity;
+}
+
 //***Setters***//
 void Client::set_Client_socket(int socket_fd){
 	this->_Client_socket = socket_fd;
@@ -592,11 +607,6 @@ void Client::set_error_code(std::string error_code){
 	this->_error_code = error_code;
 }
 
-// void Client::set_is_cgi_ready(bool value)
-// {
-// 	this->is_CGI_ready = value;
-// }
-
 void Client::set_cgiOutputfd(int fd)
 {
 	this->CgiOutputfd = fd;
@@ -607,10 +617,23 @@ void Client::set_cgiInputfd(int fd)
 	this->CgiInputfd = fd;
 }
 
-
 void Client::set_cgi(Cgi* cgi)
 {
 	this->cgi = cgi;
+}
+
+void Client::set_cgiInputBuffer(const std::string& buffer)
+{
+	this->cgi_input_buffer = buffer;
+}
+
+void Client::set_cgiInputWritten(size_t number)
+{
+	this->cgi_input_written = number;
+}
+
+void Client::update_activity() {
+	this->last_activity = std::chrono::steady_clock::now();
 }
 
 void Client::appendToBufferRequest(std::string to_append){
@@ -619,32 +642,4 @@ void Client::appendToBufferRequest(std::string to_append){
 
 void Client::clearBuffer(){
 	this->_request_buffer = "";
-}
-
-
-void Client::set_cgiInputBuffer(const std::string& buffer)
-{
-	this->cgi_input_buffer = buffer;
-}
-std::string& Client::get_cgiInputBuffer()
-{
-	return this->cgi_input_buffer;
-}
-
-void Client::set_cgiInputWritten(size_t number)
-{
-	this->cgi_input_written = number;
-}
-
-size_t Client::get_cgiInputWritten() const
-{
-	return this->cgi_input_written;
-}
-
-void Client::update_activity() {
-	this->last_activity = std::chrono::steady_clock::now();
-}
-
-std::chrono::steady_clock::time_point Client::get_activity() const {
-	return this->last_activity;
 }

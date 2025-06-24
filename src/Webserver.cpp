@@ -264,7 +264,6 @@ int Webserver::send_response(int client_fd){
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
 	if (client->get_error_code() != "200")
 	{
-		std::cout << RED << "							Error: " << client->get_error_code() << std::endl;
 		client->handle_error();
 	}
 	std::string response = client->get_Response();
@@ -329,80 +328,118 @@ bool Webserver::is_server_fd(int fd){
 	return false;
 }
 
+static bool is_method_correct(std::shared_ptr<Client>& client)
+{
+	std::string method = client->get_Request("method");
+	if (method.empty()) {
+		std::cerr << RED << "Method not found in request" << RESET << std::endl;
+		client->set_error_code("400");
+		// modifyEpollEvent(client_fd, EPOLLOUT);
+		// delete cgi;
+		// client->set_cgi(nullptr);
+		return false;
+	}
+	if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
+	{
+		client->set_error_code("405");
+		// modifyEpollEvent(client_fd, EPOLLOUT);
+		// delete cgi;
+		// client->set_cgi(nullptr);
+		return false;
+	}
+	return true;
+}
+
+static bool is_cgi_path_valid(std::shared_ptr<Client>& client)
+{
+	std::string url_path = client->get_Request("url_path");
+	std::string cgi_script_path = client->get_cgi()->get_config_root() + url_path;
+	if (access(cgi_script_path.c_str(), F_OK) != 0) {
+		std::cerr << RED << "CGI script not found: " << cgi_script_path << RESET << std::endl;
+		client->set_error_code("404");
+		// delete cgi;
+		// client->set_cgi(nullptr);
+		return false;
+	}
+	if (url_path.size() >= 3 && url_path.compare(url_path.size() - 3, 3, ".py") != 0){
+		std::cerr << RED << "Access FORBIDDEN to CGI Folder" << RESET << std::endl;
+		client->set_error_code("403");
+		return false;
+	}
+	return true;
+}
+
+bool Webserver::handle_cgi_post_and_delete(std::shared_ptr<Client>& client)
+{
+	std::string method = client->get_Request("method");
+	if ((method == "POST" && client->get_cgi()->get_method_post()) || (method == "DELETE" && client->get_cgi()->get_method_del())) {
+		int cgi_in_fd = client->get_cgi()->get_cgi_in(WRITE);
+		client->set_cgiInputfd(cgi_in_fd);
+		client->set_cgiInputBuffer(client->get_Request("body"));
+		client->set_cgiInputWritten(0);
+
+		// 1. Execute CGI script
+		client->get_cgi()->run_cgi(*client);
+
+		// 2. Add write-end to epoll for writing POST body
+		set_cgi_input_fd_to_client_map(cgi_in_fd, client);
+		addEpollFd(cgi_in_fd, EPOLLOUT);
+
+		// 3. Set up output fd for reading CGI response
+		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
+		if (cgi_out_fd == -1) {
+			std::cout << RED << "Error getting CGI out fd" << std::endl;
+			return false;
+		}
+		client->set_cgiOutputfd(cgi_out_fd);
+		this->set_cgi_fd_to_client_map(cgi_out_fd, client);
+		if (addEpollFd(cgi_out_fd, EPOLLIN) == -1) {
+			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
 bool Webserver::processing_cgi(std::shared_ptr<Client>& client, int client_fd)
 {
-	if (client->get_Request("url_path").find("/cgi-bin") != std::string::npos)
+	std::string url_path = client->get_Request("url_path");
+	if (url_path.compare("/cgi-bin") == 0 || url_path.compare("/cgi-bin/") == 0)
+	{
+		std::cerr << RED << "Access FORBIDDEN to CGI Folder" << RESET << std::endl;
+		client->set_error_code("403");
+		modifyEpollEvent(client_fd, EPOLLOUT);
+		return true;
+	}
+	if (url_path.find("/cgi-bin") != std::string::npos)
 	{
 		Cgi *cgi = new Cgi();
 		client->set_cgi(cgi);
 		std::cout << "CGI response" << std::endl;
 		client->get_cgi()->start_cgi(getLocationByPath(client_fd, "/cgi-bin"));
-		std::string method = client->get_Request("method");
-		if (method.empty()) {
-			std::cerr << RED << "Method not found in request" << RESET << std::endl;
-			client->set_error_code("400");
-			modifyEpollEvent(client_fd, EPOLLOUT);
-			delete cgi;
-			return true;
-		}
-		if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
+		if (is_cgi_path_valid(client) == false || is_method_correct(client) == false)
 		{
-			client->set_error_code("405");
 			modifyEpollEvent(client_fd, EPOLLOUT);
-			delete cgi;
 			return true;
 		}
 
-		std::string cgi_script_path = client->get_cgi()->get_config_root() + client->get_Request("url_path");
-		if (access(cgi_script_path.c_str(), F_OK) != 0) {
-			std::cerr << RED << "CGI script not found: " << cgi_script_path << RESET << std::endl;
-			client->set_error_code("404");
-			modifyEpollEvent(client_fd, EPOLLOUT);
-			delete cgi;
+		if (handle_cgi_post_and_delete(client))
 			return true;
-		}
-
-		if ((method == "POST" && client->get_cgi()->get_method_post()) || (method == "DELETE" && client->get_cgi()->get_method_del())) {
-			int cgi_in_fd = client->get_cgi()->get_cgi_in(WRITE);
-			client->set_cgiInputfd(cgi_in_fd);
-			client->set_cgiInputBuffer(client->get_Request("body"));
-			client->set_cgiInputWritten(0);
-
-			// 1. Execute CGI script
-			client->get_cgi()->run_cgi(*client);
-
-			// 2. Add write-end to epoll for writing POST body
-			set_cgi_input_fd_to_client_map(cgi_in_fd, client);
-			addEpollFd(cgi_in_fd, EPOLLOUT);
-
-			// 3. Set up output fd for reading CGI response
-			int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
-			if (cgi_out_fd == -1) {
-				std::cout << RED << "Error getting CGI out fd" << std::endl;
-				return 1;
-			}
-			client->set_cgiOutputfd(cgi_out_fd);
-			this->set_cgi_fd_to_client_map(cgi_out_fd, client);
-			if (addEpollFd(cgi_out_fd, EPOLLIN) == -1) {
-				std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
-				return 1;
-			}
-			return true;
-		}
+		
 		client->get_cgi()->run_cgi(*client);
 		int cgi_out_fd = client->get_cgi()->get_cgi_out(READ);
 		if (cgi_out_fd == -1)
 		{
 			std::cout << RED << "Error getting CGI out fd" << std::endl;
-			return 1;
+			return false;
 		}
-		std::cout << "															CGI out fd: " << cgi_out_fd << std::endl;
 		client->set_cgiOutputfd(cgi_out_fd);
 		this->set_cgi_fd_to_client_map(cgi_out_fd, client);
 		if (addEpollFd(cgi_out_fd, EPOLLIN) == -1)
 		{
 			std::cout << "Failed to add Cgi-out Fd to epoll" << std::endl;
-			return 1;
+			return false;
 		}
 		return true;
 	}

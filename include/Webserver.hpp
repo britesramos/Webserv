@@ -52,7 +52,6 @@ class Webserver{
 		void set_cgi_input_fd_to_client_map(int cgi_in_fd, std::shared_ptr<Client> client);
 
 		//Handling Responses
-		// int handle_cgi_request(int client_fd, const std::string& url_path);
 		// int handle_error(std::shared_ptr<Client>& client);
 		std::string build_header(std::string body);
 		void close_connection(int connection_fd);
@@ -73,6 +72,7 @@ class Webserver{
 		std::shared_ptr<Client> get_client_by_cgi_fd(int cgi_fd);
 		std::shared_ptr<Client> get_client_by_cgi_input_fd(int cgi_in_fd);
 		bool processing_cgi(std::shared_ptr<Client>& client, int client_fd);
+		bool handle_cgi_post_and_delete(std::shared_ptr<Client>& client);
 		//Clean_up_method
 		void clean_up();
 };
