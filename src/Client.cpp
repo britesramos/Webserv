@@ -555,6 +555,17 @@ bool Client::is_method_allowed(const std::string& url_path, std::string method){
 	return false;
 }
 
+void Client::handle_return_page(std::string code, std::string url)
+{
+    std::stringstream body;
+    body << "<html><head><title>" << code << " Moved Permanently</title></head>"
+        << "<body><p>Redirecting to <a href=\"" << url << "\">" << url << "</a>.</p></body></html>";
+    std::string status_line = build_status_line(code, "Moved Permanently");
+    std::string header = "Location: " + url + "\r\n" + build_header(body.str());
+    std::string response = status_line + header + body.str();
+    this->_response = response;
+}
+
 static std::string generate_autoindex_html(const std::string& dir_path, const std::string& url_path) {
     DIR* dir = opendir(dir_path.c_str());
     if (!dir)

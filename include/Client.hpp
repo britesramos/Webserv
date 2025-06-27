@@ -117,5 +117,6 @@ class Client {
 		void handle_index_page(std::string full_path);
 		void update_activity();
 		std::chrono::steady_clock::time_point get_activity() const;
+        void handle_return_page(std::string code, std::string url);
 
 };

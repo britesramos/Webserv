@@ -1,6 +1,6 @@
 #include "../include/Location.hpp"
 
-Location::Location()
+Location::Location() : path(""), root (""), index(""), allowed_methods(), return_value()
 {
 	this->autoindex = OFF;
 }
@@ -36,7 +36,7 @@ void Location::setAutoindex(bool value)
 	this->autoindex = value;
 }
 
-void Location::setReturnvalue(int code, std::string value)
+void Location::setReturnvalue(std::string code, std::string value)
 {
 	this->return_value[code] = value;
 }
@@ -67,13 +67,28 @@ bool Location::getAutoindex() const
 	return (this->autoindex);
 }
 
-std::string Location::getReturnvalue(int code) const
+// std::string Location::getReturnvalue(std::string code) const
+// {
+// 	auto temp = this->return_value.find(code);
+// 	if (temp != this->return_value.end()) // check if is not in the end of the map
+// 		return (temp->second);
+// 	else
+// 		return ("");
+// }
+
+std::pair<std::string, std::string> Location::getReturn() const {
+    if (!return_value.empty())
+        return *return_value.begin();
+    return std::make_pair("", "");
+}
+
+bool Location::has_return()
 {
-	auto temp = this->return_value.find(code);
-	if (temp != this->return_value.end()) // check if is not in the end of the map
-		return (temp->second);
-	else
-		return ("");
+    if (this->return_value.empty())
+        return false;
+    if (return_value.begin()->first.empty() || return_value.begin()->second.empty())
+        return false;
+    return true;
 }
 
 void Location::print() const {
@@ -86,7 +101,7 @@ void Location::print() const {
 		if (i != allowed_methods.size() - 1) std::cout << ", ";
 	}
 	std::cout << "\nReturn:\n";
-	for (std::map<int, std::string>::const_iterator it = return_value.begin(); it != return_value.end(); ++it) {
+	for (std::map<std::string, std::string>::const_iterator it = return_value.begin(); it != return_value.end(); ++it) {
 		std::cout << "  " << it->first << " -> " << it->second << "\n";
 	}
 	std::cout << "\n";

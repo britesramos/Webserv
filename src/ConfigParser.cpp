@@ -242,7 +242,7 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 				std::cerr << "Invalid values from Return in  - LOCATION - block" << std::endl;
 				return false;
 			}
-			current_location.setReturnvalue(std::stoi(temp[0]), temp[1]);
+			current_location.setReturnvalue(temp[0], temp[1]);
 		}
 		else
 		{

@@ -320,9 +320,19 @@ static bool handle_autoindex(std::shared_ptr<Client>& client)
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
+    std::string url_path =  client->get_Request("url_path");
 
-    std::string path = client->findRoot(client->get_Request("url_path")) + client->get_Request("url_path");
-    // std::cout << "      PATH: " << path << std::endl;
+    Location location = getLocationByPath(client_fd, url_path);
+    if (location.has_return() == true) {
+        std::pair<std::string, std::string> ret = location.getReturn();
+        std::string code = ret.first;
+        std::string url = ret.second;
+
+        client->handle_return_page(code, url);
+        modifyEpollEvent(client_fd, EPOLLOUT);
+        return 0;
+    }
+    std::string path = client->findRoot(url_path) + url_path;
     if (access(path.c_str(), F_OK) != 0) {
         std::cerr << RED << "Path not found: " << path << RESET << std::endl;
         client->set_error_code("404");
@@ -665,6 +675,10 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 			matched_prefix = it->first;
 		}
 	}
+    if (matched_prefix.empty()) {
+        std::cerr << RED << "No matching location for path: " << url_path << RESET << std::endl;
+        return Location();
+    }
 	return (locations[matched_prefix]);
 }
 
