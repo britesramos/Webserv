@@ -4,12 +4,12 @@
 Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
 	this->_error_code = "200";
 	this->last_activity = std::chrono::steady_clock::now();
-	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl; //Should add some kind of client identifier (Socket FD?);
+	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl;
 	// this->cgi = new Cgi();
 }
 
 Client::~Client(){
-	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl; //Should add some kind of client identifier (Socket FD?);
+	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl;
 	// if (this->_Client_socket != -1)
 	// 	close(this->_Client_socket);
 	// delete this->cgi;
@@ -117,7 +117,6 @@ int Client::parse_body(){
 	//Get the body (everything after the header):
 	std::string body = this->_request_buffer.substr(body_start);
 	this->_Client_RequestMap["body"] = body;
-	// printf("			body: %s\n", body.c_str()); //temp
 	return 0;
 }
 

@@ -291,7 +291,6 @@ static bool handle_autoindex(std::shared_ptr<Client>& client)
 	}
 
 	if (!S_ISDIR(buffer.st_mode)) {
-		std::cout << YELLOW << "	it is not a directory!" << RESET << std::endl;
 		return true;
 	}
 
@@ -332,8 +331,9 @@ int Webserver::build_response(int client_fd){
     }
 	if (handle_autoindex(client) == false)
 	{
-		send_response(client->get_Client_socket()); // modify to epoll was working the same
-		close_connection(client->get_Client_socket());
+        modifyEpollEvent(client_fd, EPOLLOUT);
+		// send_response(client->get_Client_socket()); // modify to epoll was working the same
+		// close_connection(client->get_Client_socket());
 		return 0;
 	}
 
@@ -503,8 +503,8 @@ int Webserver::process_request(int client_fd){
 	
 	std::cout << GREEN << "\n====== Processing Client: " << client_fd << " ======" << std::endl;
 	int bytes_received = 0;
-	char buffer[BUFFER_SIZE] = {0}; //TODO: Fix this to parse the entire request, we are currently only reading a fixed BUFFER_SIZE
-	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0); //TODO: check Flags
+	char buffer[BUFFER_SIZE] = {0};
+	bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	client->update_activity(); // for timeout checks
 	std::cout << "Bytes received: " << bytes_received << std::endl;
 
@@ -514,10 +514,9 @@ int Webserver::process_request(int client_fd){
 		close_connection(client_fd);
 		return 0;
 	}
-
 	if (bytes_received < 0) //An error ocurred while recv().
 	{
-		std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
+        std::cout << RED << "Error receiving data from client: " << client_fd << " - " << strerror(errno) << std::endl;
 		client->set_error_code("400");
 		return 1;
 	}
@@ -531,10 +530,14 @@ int Webserver::process_request(int client_fd){
             
             if (header_end != std::string::npos) {
                 size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
+                // std::cout << YELLOW << "Body_lenght: " << body_length << std::endl;
                 if (body_length >= content_length) {
 					std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
                     // We have received all the POST data, proceed to build response
-                    client->parseClientRequest();
+                    if (client->parseClientRequest() == -1){
+                        modifyEpollEvent(client_fd, EPOLLOUT);
+                        return 0;
+                    }
 					if (processing_cgi(client, client_fd))
 					{
 						std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
@@ -549,10 +552,12 @@ int Webserver::process_request(int client_fd){
         return 0; // Still receiving headers
     }
 	else {//Ready to process request. Received the entire request.
-		std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
+		// std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
 		//Parse client request into correct client object:
-		client->parseClientRequest();
-		// if (client->get_Request("Content-Leght") == client->get_requestBuffer().size())
+		if (client->parseClientRequest() == -1){
+            modifyEpollEvent(client_fd, EPOLLOUT);
+            return 0;
+        }
 		if (processing_cgi(client, client_fd))
 		{
 			std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
@@ -639,8 +644,6 @@ int Webserver::get_epoll_fd() const{
 	return this->_epoll_fd;
 }
 
-
-//TODO: To be deleted from here? Moved to ServerConfig.
 Location Webserver::getLocationByPath(int client_fd, const std::string& url_path){
 	//1) Find server by client fd:
 	Server* server = getServerBySocketFD(client_server_map.find(client_fd)->second);
@@ -654,7 +657,6 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 		std::cerr << RED << "Error: No locations found for server fd: " << client_fd << std::endl;
 		return Location();
 	}
-	//TODO: I think this is only matching the entire url. not also first section.
 	//3) Find location by url path (logenst prefix match):
 	std::string matched_prefix;
 	for (auto it = locations.begin(); it != locations.end(); ++it){

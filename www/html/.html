@@ -534,30 +534,37 @@
 
     // Upload form AJAX logic
     document.querySelector('#uploadForm form').addEventListener('submit', async function(event) {
-      event.preventDefault();
-      const resultDiv = document.getElementById('uploadResult');
-      resultDiv.className = 'upload-result'; // Reset classes
-      resultDiv.textContent = 'Uploading...';
+    event.preventDefault();
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.className = 'upload-result'; // Reset classes
+    resultDiv.textContent = 'Uploading...';
 
-      const formData = new FormData(this);
+    const formData = new FormData(this);
 
-      try {
+    try {
         const response = await fetch('/cgi-bin/upload.py', {
-          method: 'POST',
-          body: formData
+        method: 'POST',
+        body: formData
         });
+        const contentType = response.headers.get('Content-Type');
         const data = await response.text();
-        if (data.includes('Error:')) {
-          resultDiv.className = 'upload-result error';
-          resultDiv.innerHTML = `❌ <span>${data}</span>`;
+
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+        document.documentElement.innerHTML = data;
+        } else if (!response.ok) {
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = '<p style="color: #d87c88;">Error uploading file. Please try again.</p>';
+        } else if (data.includes('Error:')) {
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = `❌ <span>${data}</span>`;
         } else {
-          window.location.href = '/Success.html';
+        window.location.href = '/Success.html';
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error:', error);
         resultDiv.className = 'upload-result error';
         resultDiv.innerHTML = '❌ <span>Error uploading file. Please try again.</span>';
-      }
+    }
     });
 
     // Toggle Delete Pattern form
@@ -566,64 +573,43 @@
       form.classList.toggle('active');
     });
 
-    // // AJAX for Delete Pattern form
-    // document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
-    //   event.preventDefault();
-    //   const resultDiv = document.getElementById('deleteResult');
-    //   resultDiv.className = 'upload-result';
-    //   resultDiv.textContent = 'Deleting...';
-
-    //   const formData = new FormData(this);
-
-    //   try {
-    //     const response = await fetch('/cgi-bin/delete_upload.py', {
-    //       method: 'POST',
-    //       body: formData
-    //     });
-    //     const data = await response.text();
-    //     if (data.includes('Error:')) {
-    //       resultDiv.className = 'upload-result error';
-    //       resultDiv.innerHTML = `❌ <span>${data}</span>`;
-    //     } else {
-    //       window.location.href = '/Success.html';
-    //     }
-    //   } catch (error) {
-    //     console.error('Error:', error);
-    //     resultDiv.className = 'upload-result error';
-    //     resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
-    //   }
-    // });
-
     // JavaScript to send a DELETE request with fetch
     document.querySelector('#deleteForm form').addEventListener('submit', async function(event) {
-      event.preventDefault();
-      const resultDiv = document.getElementById('deleteResult');
-      resultDiv.className = 'upload-result';
-      resultDiv.textContent = 'Deleting...';
+    event.preventDefault();
+    const resultDiv = document.getElementById('deleteResult');
+    resultDiv.className = 'upload-result';
+    resultDiv.textContent = 'Deleting...';
 
-      const formData = new FormData(this);
-      const filename = formData.get('filename');
+    const formData = new FormData(this);
+    const filename = formData.get('filename');
 
-      try {
+    try {
         const response = await fetch('/cgi-bin/delete_upload.py', {
-          method: 'DELETE',
-          headers: {
+        method: 'DELETE',
+        headers: {
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ filename: filename })
+        },
+        body: JSON.stringify({ filename: filename })
         });
+        const contentType = response.headers.get('Content-Type');
         const data = await response.text();
-        if (data.includes('Error:')) {
-          resultDiv.className = 'upload-result error';
-          resultDiv.innerHTML = `❌ <span>${data}</span>`;
+
+        if (!response.ok && contentType && contentType.includes('text/html')) {
+        document.documentElement.innerHTML = data;
+        } else if (!response.ok) {
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = '<p style="color: #d87c88;">Error deleting file. Please try again.</p>';
+        } else if (data.includes('Error:')) {
+        resultDiv.className = 'upload-result error';
+        resultDiv.innerHTML = `❌ <span>${data}</span>`;
         } else {
-          window.location.href = '/Success.html';
+        window.location.href = '/Success.html';
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error:', error);
         resultDiv.className = 'upload-result error';
         resultDiv.innerHTML = '❌ <span>Error deleting file. Please try again.</span>';
-      }
+    }
     });
   </script>
 </body>
