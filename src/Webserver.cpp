@@ -224,11 +224,10 @@ void Webserver::timeout_checks() {
 			if (elapsed > CLIENT_TIMEOUT) {
 				int fd = client->get_Client_socket();
 				std::cout << RED << "Client "<< fd << " TIMEOUT!" << RESET << std::endl; 
-				auto next = std::next(it);
 				client->set_error_code("408");
 				send_response(fd);
+				++it;
 				close_connection(fd);
-				it = next;
 			}
 			else
 				++it;
