@@ -220,13 +220,18 @@ void Webserver::timeout_checks() {
 		auto& clients = _servers[s].getClients();
 			for (auto it = clients.begin(); it != clients.end(); ) {
 			std::shared_ptr<Client> client = it->second;
-			auto current = it++; // increment iterator before erase
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->get_activity()).count();
 			if (elapsed > CLIENT_TIMEOUT) {
-				send_response(client->get_Client_socket());
-				close_connection(client->get_Client_socket());
-				clients.erase(current);
+				int fd = client->get_Client_socket();
+				std::cout << RED << "Client"<< fd << "TIMEOUT!" << std::endl; 
+				auto next = std::next(it);
+				client->set_error_code("408");
+				send_response(fd);
+				close_connection(fd);
+				it = next;
 			}
+			else
+				++it;
 		}
 	}
 
