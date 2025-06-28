@@ -3,6 +3,7 @@
 //Constructor and Destructor
 Webserver::Webserver(){
 	this->_epoll_fd = 0;
+	this->_epoll_event_count = 0;
 }
 Webserver::~Webserver(){
 	close(_epoll_fd);
@@ -83,6 +84,10 @@ int Webserver::modifyEpollEvent(int socket_fd, uint32_t events){
 
 
 int Webserver::epoll_wait_util(struct epoll_event* events){
+	if (this->_epoll_event_count <= 0){
+		std::cout << RED << "Invalid epoll event count." << RESET << std::endl;
+		return -1;
+	}
 	//EPOLL_WAIT:
 	int epoll_num_ready_events = epoll_wait(this->_epoll_fd, events, this->_epoll_event_count, TIMEOUT);
 	if (epoll_num_ready_events == -1)
@@ -123,6 +128,7 @@ int Webserver::main_loop()
 		//EPOLL_WAIT:
 		// std::cout << GREEN << "\n\n=======================================================\n=============== !!! EPOLL_WAIT TIME !!! ===============\n=======================================================" << std::endl;
 		struct epoll_event events[this->_epoll_event_count];
+		memset(events, 0, sizeof(struct epoll_event) * this->_epoll_event_count);
 		int epoll_num_ready_events = epoll_wait_util(events);
 		if (epoll_num_ready_events == -1)
 			return 1;
