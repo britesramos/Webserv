@@ -394,7 +394,6 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if (method.empty()) {
 		std::cerr << RED << "Method not found in request" << RESET << std::endl;
 		client->set_error_code("400");
-		// modifyEpollEvent(client_fd, EPOLLOUT); ///TODO: Test not allowed methods. I have the feeling this is going to get the server stuck.
 		// delete cgi;
 		// client->set_cgi(nullptr);
 		return false;
@@ -402,7 +401,6 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
 	{
 		client->set_error_code("405");
-		// modifyEpollEvent(client_fd, EPOLLOUT);
 		// delete cgi;
 		// client->set_cgi(nullptr);
 		return false;
