@@ -26,7 +26,6 @@ int main(int argc, char **argv)
 	if (argc <= 2)
 	{
 		ConfigParser file;
-		// g_configparser_ptr = &file;
 		std::string input;
 		if (argc == 1)
 			input = "./config_files/config_2.conf";
@@ -38,7 +37,6 @@ int main(int argc, char **argv)
 		
 		//1)Start/init the server(s) + epoll_instance:
 		Webserver webserver;
-		// g_webserver_ptr = &webserver;
 		if (webserver.init_epoll() == 1)
 		{
 			std::cerr << "Failed to initialize epoll" << std::endl;
