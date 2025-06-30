@@ -37,6 +37,8 @@ class ConfigParser {
 		bool is_semicolon_present(std::string& value);
 		std::vector<std::string> split_by_whitespace(const std::string& str);
 
+		void clean_up();
+
 };
 
 #endif

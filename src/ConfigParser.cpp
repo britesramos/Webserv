@@ -321,3 +321,10 @@ bool ConfigParser::is_values_and_keys_set(std::string str, ServerConfig& current
 	}
 	return true;
 }
+
+void ConfigParser::clean_up(){
+	this->lines.clear();
+	this->servers.clear();
+	this->number_of_server = 0;
+	std::cout << "ConfigParser cleaned up." << std::endl;
+}

@@ -4,6 +4,7 @@
 #include "../include/Webserver.hpp"
 
 Webserver* g_webserver_ptr = NULL;
+ConfigParser* g_configparser_ptr = NULL;
 
 void interrupt_helper(int sig)
 {
@@ -11,6 +12,8 @@ void interrupt_helper(int sig)
 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
 	if (g_webserver_ptr)
 		g_webserver_ptr->clean_up();
+	if (g_configparser_ptr)
+		g_configparser_ptr->clean_up();
 	exit(sig + 128);
 }
 
@@ -27,6 +30,7 @@ int main(int argc, char **argv)
 	if (argc <= 2)
 	{
 		ConfigParser file;
+		g_configparser_ptr = &file;
 		std::string input;
 		if (argc == 1)
 			input = "./config_files/config_2.conf";
