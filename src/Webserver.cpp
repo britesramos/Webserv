@@ -3,6 +3,7 @@
 //Constructor and Destructor
 Webserver::Webserver(){
 	this->_epoll_fd = 0;
+	this->_epoll_event_count = 0;
 }
 Webserver::~Webserver(){
 	close(_epoll_fd);
@@ -83,6 +84,10 @@ int Webserver::modifyEpollEvent(int socket_fd, uint32_t events){
 
 
 int Webserver::epoll_wait_util(struct epoll_event* events){
+	if (this->_epoll_event_count <= 0){
+		std::cout << RED << "Invalid epoll event count." << RESET << std::endl;
+		return -1;
+	}
 	//EPOLL_WAIT:
 	int epoll_num_ready_events = epoll_wait(this->_epoll_fd, events, this->_epoll_event_count, TIMEOUT);
 	if (epoll_num_ready_events == -1)
@@ -123,6 +128,7 @@ int Webserver::main_loop()
 		//EPOLL_WAIT:
 		// std::cout << GREEN << "\n\n=======================================================\n=============== !!! EPOLL_WAIT TIME !!! ===============\n=======================================================" << std::endl;
 		struct epoll_event events[this->_epoll_event_count];
+		memset(events, 0, sizeof(struct epoll_event) * this->_epoll_event_count);
 		int epoll_num_ready_events = epoll_wait_util(events);
 		if (epoll_num_ready_events == -1)
 			return 1;
@@ -220,13 +226,17 @@ void Webserver::timeout_checks() {
 		auto& clients = _servers[s].getClients();
 			for (auto it = clients.begin(); it != clients.end(); ) {
 			std::shared_ptr<Client> client = it->second;
-			auto current = it++; // increment iterator before erase
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->get_activity()).count();
 			if (elapsed > CLIENT_TIMEOUT) {
-				send_response(client->get_Client_socket());
-				close_connection(client->get_Client_socket());
-				clients.erase(current);
+				int fd = client->get_Client_socket();
+				std::cout << RED << "Client "<< fd << " TIMEOUT!" << RESET << std::endl; 
+				client->set_error_code("408");
+				send_response(fd);
+				++it;
+				close_connection(fd);
 			}
+			else
+				++it;
 		}
 	}
 
@@ -320,9 +330,19 @@ static bool handle_autoindex(std::shared_ptr<Client>& client)
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
+    std::string url_path =  client->get_Request("url_path");
 
-    std::string path = client->findRoot(client->get_Request("url_path")) + client->get_Request("url_path");
-    // std::cout << "      PATH: " << path << std::endl;
+    Location location = getLocationByPath(client_fd, url_path);
+    if (location.has_return() == true) {
+        std::pair<std::string, std::string> ret = location.getReturn();
+        std::string code = ret.first;
+        std::string url = ret.second;
+
+        client->handle_return_page(code, url);
+        modifyEpollEvent(client_fd, EPOLLOUT);
+        return 0;
+    }
+    std::string path = client->findRoot(url_path) + url_path;
     if (access(path.c_str(), F_OK) != 0) {
         std::cerr << RED << "Path not found: " << path << RESET << std::endl;
         client->set_error_code("404");
@@ -665,6 +685,10 @@ Location Webserver::getLocationByPath(int client_fd, const std::string& url_path
 			matched_prefix = it->first;
 		}
 	}
+    if (matched_prefix.empty()) {
+        std::cerr << RED << "No matching location for path: " << url_path << RESET << std::endl;
+        return Location();
+    }
 	return (locations[matched_prefix]);
 }
 

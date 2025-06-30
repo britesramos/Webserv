@@ -15,7 +15,7 @@ class Location {
 		std::string index;
 		std::vector<std::string> allowed_methods;
 		bool autoindex;
-		std::map<int, std::string> return_value;
+		std::map<std::string, std::string> return_value;
 	public:
 		Location();
 		~Location();
@@ -26,7 +26,7 @@ class Location {
 		void setIndex(std::string index);
 		void set_methods(std::string method);
 		void setAutoindex(bool value);
-		void setReturnvalue(int code, std::string value);
+		void setReturnvalue(std::string code, std::string value);
 
 		// Getters
 		std::string getPath() const;
@@ -34,8 +34,10 @@ class Location {
 		std::string getIndex() const;
 		const std::vector<std::string>& get_methods() const;
 		bool getAutoindex() const;
-		std::string getReturnvalue(int code) const;
+        std::pair<std::string, std::string> getReturn() const;
+		// std::string getReturnvalue(std::string code) const;
 
+        bool has_return();
 		void print() const;
 };
 
