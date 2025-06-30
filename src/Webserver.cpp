@@ -532,7 +532,7 @@ int Webserver::process_request(int client_fd){
                 size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
                 // std::cout << YELLOW << "Body_lenght: " << body_length << std::endl;
                 if (body_length >= content_length) {
-					std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
+					// std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
                     // We have received all the POST data, proceed to build response
                     if (client->parseClientRequest() == -1){
                         modifyEpollEvent(client_fd, EPOLLOUT);

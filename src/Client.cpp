@@ -86,7 +86,6 @@ int Client::parse_header(){
 		return -1;
 	//Get the header:
 	std::string header = this->_request_buffer.substr(header_start, header_end - header_start);
-	// printf("Header: %s\n", header.c_str());
 	//Split the header into lines + Loop through splited head and assign key (before ":") and value (after ":") to the map
 	size_t pos = 0;
 	pos = header.find("\r\n");
@@ -103,9 +102,6 @@ int Client::parse_header(){
 		header.erase(0, pos + 2);
 		pos = header.find("\r\n");
 	}
-	// 		for (std::unordered_map<std::string, std::string>::iterator it = _Client_RequestMap.begin(); it != _Client_RequestMap.end(); ++it) {
-	// 	std::cout << YELLOW << "Header: [" << it->first << "] = [" << it->second << "]" << std::endl;
-	// }
 	return 0;
 }
 
