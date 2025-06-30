@@ -15,6 +15,8 @@ Server::Server(ServerConfig config_data) : _config_data(config_data){
 }
 
 Server::~Server(){
+	
+	std::cout << YELLOW << "Server destructor called." << RESET << std::endl;
 }
 
 int Server::startserver(){

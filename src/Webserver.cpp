@@ -725,8 +725,14 @@ void Webserver::clean_up(){
 	for (size_t i = 0; i < this->_servers.size(); ++i){
 		close(this->_servers[i].getServerSocket());
 	}
+	_servers.clear();
+	
+	cgi_fd_to_client_map.clear();
+	cgi_input_fd_to_client_map.clear();
+
 	if (this->_epoll_fd > 0)
-	close(this->_epoll_fd);
+
+		close(this->_epoll_fd);
 }
 
 //Utility methods
