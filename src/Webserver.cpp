@@ -727,6 +727,7 @@ void Webserver::clean_up(){
 	}
 	_servers.clear();
 	
+	client_server_map.clear();
 	cgi_fd_to_client_map.clear();
 	cgi_input_fd_to_client_map.clear();
 
