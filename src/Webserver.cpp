@@ -726,7 +726,6 @@ void Webserver::clean_up(){
 		close(this->_servers[i].getServerSocket());
 	}
 	_servers.clear();
-	
 	client_server_map.clear();
 	cgi_fd_to_client_map.clear();
 	cgi_input_fd_to_client_map.clear();

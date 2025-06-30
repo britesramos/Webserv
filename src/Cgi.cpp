@@ -2,6 +2,13 @@
 
 Cgi::Cgi()
 {
+    this->cgi_in[0] = -1;
+    this->cgi_in[1] = -1;
+    this->cgi_out[0] = -1;
+    this->cgi_out[1] = -1;
+    this->pid = -1;
+    this->path = "";
+    this->config_root = "";
 	this->del = false;
 	this->get = false;
 	this->post = false;

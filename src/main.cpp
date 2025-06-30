@@ -3,18 +3,14 @@
 #include "../include/ConfigParser.hpp"
 #include "../include/Webserver.hpp"
 
-Webserver* g_webserver_ptr = NULL;
-ConfigParser* g_configparser_ptr = NULL;
+bool g_stop = 0;
 
 void interrupt_helper(int sig)
 {
+    (void)sig;
 	std::cout << "\n";
 	std::cout << "\n	I was killed by the Ctrl+C\n" << std::endl;
-	if (g_webserver_ptr)
-		g_webserver_ptr->clean_up();
-	if (g_configparser_ptr)
-		g_configparser_ptr->clean_up();
-	exit(sig + 128);
+    g_stop = 1;
 }
 
 int main(int argc, char **argv)
@@ -30,7 +26,7 @@ int main(int argc, char **argv)
 	if (argc <= 2)
 	{
 		ConfigParser file;
-		g_configparser_ptr = &file;
+		// g_configparser_ptr = &file;
 		std::string input;
 		if (argc == 1)
 			input = "./config_files/config_2.conf";
@@ -42,16 +38,18 @@ int main(int argc, char **argv)
 		
 		//1)Start/init the server(s) + epoll_instance:
 		Webserver webserver;
-		g_webserver_ptr = &webserver;
+		// g_webserver_ptr = &webserver;
 		if (webserver.init_epoll() == 1)
 		{
 			std::cerr << "Failed to initialize epoll" << std::endl;
+            file.clean_up();
 			return (1);
 		}
 		const std::vector<ServerConfig>& servers = file.getServer();
 		if (webserver.init_servers(servers) == 1)
 		{
 			std::cerr << "Failed to initialize servers" << std::endl;
+            file.clean_up();
 			return (1);
 		}
 
@@ -61,12 +59,14 @@ int main(int argc, char **argv)
 		if (webserver.addServerSockets() == 1)
 		{
 			webserver.clean_up();
+            file.clean_up();
 			return (1);
 		}
 		// //3)Start accepting connections:
-		if (webserver.main_loop() == 1)
+		if (webserver.main_loop() == 1 || g_stop)
 		{
 			webserver.clean_up();
+            file.clean_up();
 			//Don't these are closed once the objects are destroyed?
 			return (1);
 		}
