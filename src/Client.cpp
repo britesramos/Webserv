@@ -237,8 +237,10 @@ int Client::handle_delete_request(){
 				write_file.close();
 				std::cout << GREEN << "Successfully delted entry with email: " << email << std::endl;
 			}
-			else
-				std::cout << RED << "This email does not exist in our database. It can't be deleted." << std::endl;
+			else{
+				std::cout << RED << "This email does not exist in our database. It can't be deleted." << RESET << std::endl;
+                return 0;
+            }
 
 		}
 		handle_success();

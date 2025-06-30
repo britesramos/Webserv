@@ -460,39 +460,43 @@
       document.querySelector('.overlay').classList.remove('active');
     }
 
-    async function confirmUnsubscribe() {
-    const email = document.getElementById('unsubscribeEmail').value;
-    
-    if (!email) {
-        alert('Please enter your email');
+async function confirmUnsubscribe() {
+  const email = document.getElementById('unsubscribeEmail').value;
+
+  if (!email) {
+    alert('Please enter your email');
+    return;
+  }
+
+  if (confirm('Are you sure you want to unsubscribe? This will delete your account.')) {
+    try {
+      const response = await fetch('/signin/form_submissions.csv', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email })
+      });
+
+      const htmlContent = await response.text();
+
+      // Check for known error message in the returned HTML
+      if (htmlContent.includes("This email does not exist in our database")) {
+        alert("This email does not exist in our database. It can't be deleted.");
+        // Keep modal open for retry
         return;
-    }
+      }
 
-    if (confirm('Are you sure you want to unsubscribe? This will delete your account.')) {
-        try {
-            const response = await fetch('/signin/form_submissions.csv', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: email })
-            });
-
-            const contentType = response.headers.get('Content-Type');
-            const htmlContent = await response.text();
-            if (!response.ok && contentType && contentType.includes('text/html')) {
-                document.documentElement.innerHTML = htmlContent;
-            } else if (!response.ok) {
-                alert('Failed to unsubscribe. Please check your email and try again.');
-            } else {
-                document.documentElement.innerHTML = htmlContent;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while trying to unsubscribe.');
-        }
+      if (response.ok) {
+        document.documentElement.innerHTML = htmlContent;
+      } else {
+        alert('Failed to unsubscribe. Please check your email and try again.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while trying to unsubscribe.');
     }
-    closeUnsubscribeForm();
+  }
 }
 
     // JavaScript to toggle forms and handle date/time

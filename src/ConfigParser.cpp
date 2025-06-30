@@ -197,7 +197,7 @@ bool ConfigParser::is_static_content_load(std::string str, Location& current_loc
 		{
 			if (is_value_empty(key, value) == true)
 				return false;
-			if (value.compare(value.size() - 5, 5, ".html") != 0)
+			if (value.size() < 5 || value.compare(value.size() - 5, 5, ".html") != 0)
 			{
 				std::cout << "Invalid extention for INDEX, change to .html" << std::endl;
 				return false;
@@ -307,6 +307,11 @@ bool ConfigParser::is_values_and_keys_set(std::string str, ServerConfig& current
 		std::size_t start = key.find(word) + word.length();
 		key = key.substr(start);
 		trim_spaces(key);
+        if (value.size() < 5 || value.compare(value.size() - 5, 5, ".html") != 0)
+        {
+            std::cout << "Invalid extention for ERROR, change to .html" << std::endl;
+            return false;
+        }
 		if (!is_digit_valid(key) || key.empty() || value.empty())
 		{
 			std::cerr << "Not a valid, error page" << std::endl;
