@@ -4,7 +4,6 @@
 Server::Server(ServerConfig config_data) : _config_data(config_data){
 	this->_Server_socket = 0;
 	this->_len_Server_address = sizeof(_Server_address);
-	// std::memset(&_Server_address, 0, sizeof(_Server_address));
 	this->_Server_address.sin_family = AF_INET;
 	if (inet_pton(AF_INET, config_data.getHost().c_str(), &this->_Server_address.sin_addr) <= 0)
 	{
@@ -15,8 +14,6 @@ Server::Server(ServerConfig config_data) : _config_data(config_data){
 }
 
 Server::~Server(){
-	
-	std::cout << YELLOW << "Server destructor called." << RESET << std::endl;
 }
 
 int Server::startserver(){

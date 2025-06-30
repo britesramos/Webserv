@@ -331,5 +331,5 @@ void ConfigParser::clean_up(){
 	this->lines.clear();
 	this->servers.clear();
 	this->number_of_server = 0;
-	std::cout << "ConfigParser cleaned up." << std::endl;
+	// std::cout << "ConfigParser cleaned up." << std::endl;
 }
