@@ -183,19 +183,19 @@ int Webserver::main_loop()
 				}
 				// 2. Handle CGI output (read)
 				else if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
-					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
+					std::shared_ptr<Client> client = this->cgi_fd_to_client_map[events[i].data.fd];
 					int result = client->handle_cgi_response(*client->get_cgi());
 					if (result == 1) {
-						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
+						close(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
 					}
 					else if (result == -1) {
 						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
 						client->set_error_code("502");
-						close(events[i].data.fd);
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
+						close(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
 					}
@@ -364,20 +364,14 @@ int Webserver::build_response(int client_fd){
 	if (client->get_Request("method") == "GET"){
 		if (client->handle_get_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "DELETE"){
 		if (client->handle_delete_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	return 0;
 }
@@ -400,7 +394,7 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if (method.empty()) {
 		std::cerr << RED << "Method not found in request" << RESET << std::endl;
 		client->set_error_code("400");
-		// modifyEpollEvent(client_fd, EPOLLOUT);
+		// modifyEpollEvent(client_fd, EPOLLOUT); ///TODO: Test not allowed methods. I have the feeling this is going to get the server stuck.
 		// delete cgi;
 		// client->set_cgi(nullptr);
 		return false;
