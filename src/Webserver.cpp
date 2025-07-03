@@ -344,7 +344,7 @@ int Webserver::build_response(int client_fd){
     }
     std::string path = client->findRoot(url_path) + url_path;
     if (access(path.c_str(), F_OK) != 0) {
-        std::cerr << RED << "Path not found: " << path << RESET << std::endl;
+        std::cerr << RED << "2Path not found: " << path << RESET << std::endl;
         client->set_error_code("404");
         modifyEpollEvent(client_fd, EPOLLOUT); // should remove and leave it for the second if to take care?
         return 1;
@@ -545,29 +545,35 @@ int Webserver::process_request(int client_fd){
         // Check if we've received the complete POST data
         size_t content_length_pos = client->get_requestBuffer().find("Content-Length: ");
         if (content_length_pos != std::string::npos) {
-            size_t content_length = std::stoi(client->get_requestBuffer().substr(content_length_pos + 16));
+			size_t content_length_end = client->get_requestBuffer().find("\r\n", content_length_pos);
+            std::string content_length_str = client->get_requestBuffer().substr(content_length_pos + 16, content_length_end - (content_length_pos + 16));
             size_t header_end = client->get_requestBuffer().find("\r\n\r\n");
-            
-            if (header_end != std::string::npos) {
-                size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
-                // std::cout << YELLOW << "Body_lenght: " << body_length << std::endl;
-                if (body_length >= content_length) {
-					// std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
-                    // We have received all the POST data, proceed to build response
-                    if (client->parseClientRequest() == -1){
-                        modifyEpollEvent(client_fd, EPOLLOUT);
-                        return 0;
-                    }
-					if (processing_cgi(client, client_fd))
-					{
-						std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
-						return 0;
+            try {
+				size_t content_length = std::stoul(content_length_str);
+				if (header_end != std::string::npos) {
+					size_t body_length = client->get_requestBuffer().length() - (header_end + 4);
+					if (body_length >= content_length) {
+						// We have received all the POST data, proceed to build response
+						if (client->parseClientRequest() == -1){
+							modifyEpollEvent(client_fd, EPOLLOUT);
+							return 0;
+						}
+						if (processing_cgi(client, client_fd))
+						{
+							std::cout << "Processing CGI request for client fd: " << client_fd << std::endl;
+							return 0;
+						}
+						else
+							build_response(client_fd);
 					}
-					else
-						build_response(client_fd);
-                }
-                return 0; // Still receiving data
-            }
+					return 0; // Still receiving data
+				}
+			} catch (const std::exception& e) {
+				std::cerr << RED << "Invalid Content-Length header: " << content_length_str << RESET << std::endl;
+				client->set_error_code("400");
+				modifyEpollEvent(client_fd, EPOLLOUT);
+				return 1;
+			}
         }
         return 0; // Still receiving headers
     }
