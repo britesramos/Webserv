@@ -190,6 +190,7 @@ int Webserver::main_loop()
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
+                        client->set_cgi(nullptr);
 					}
 					else if (result == -1) {
 						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
@@ -198,6 +199,7 @@ int Webserver::main_loop()
 						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
+                        client->set_cgi(nullptr);
 					}
 				}
 				// 3. Handle client socket (EPOLLIN/EPOLLOUT)

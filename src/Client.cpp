@@ -1,7 +1,7 @@
 #include "../include/Client.hpp"
 #include "../include/Cgi.hpp"
 
-Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config){
+Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket_fd), _server_config(server_config), cgi(nullptr){
 	this->_error_code = "200";
 	this->last_activity = std::chrono::steady_clock::now();
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl;
@@ -12,7 +12,7 @@ Client::~Client(){
 	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl;
 	// if (this->_Client_socket != -1)
 	// 	close(this->_Client_socket);
-	// delete this->cgi;
+	delete this->cgi;
 }
 
 // Client::Client(const Client& other){
@@ -385,8 +385,7 @@ int Client::handle_cgi_response(Cgi& cgi)
 	else if (bytes_read == 0) {
 		std::cout << "CGI process has finished reading output." << std::endl;
 		std::string status_line = build_status_line("200", "OK");
-		std::string header = build_header(cgi_output_buffer);
-		std::string full_response = status_line + header + cgi_output_buffer;
+		std::string full_response = status_line + cgi_output_buffer;
 
 		std::cout << "Final CGI Response:\n" << full_response << std::endl;
 		this->_response = full_response;

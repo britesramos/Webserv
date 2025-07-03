@@ -8,6 +8,8 @@ import json
 
 UPLOAD_DIR = "www/uploads/"
 
+print("Content-type: text/html\n")
+
 method = os.environ.get("REQUEST_METHOD", "")
 filename = ""
 if method in ("DELETE", "POST"):

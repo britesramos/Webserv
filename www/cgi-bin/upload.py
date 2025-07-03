@@ -7,6 +7,8 @@ import os
 import cgi
 import sys
 
+print("Content-type: text/html\n")
+
 upload_dir = "www/uploads"
 try:
     if not os.path.exists(upload_dir):
