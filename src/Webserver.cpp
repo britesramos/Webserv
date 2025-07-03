@@ -346,7 +346,7 @@ int Webserver::build_response(int client_fd){
     }
     std::string path = client->findRoot(url_path) + url_path;
     if (access(path.c_str(), F_OK) != 0) {
-        std::cerr << RED << "2Path not found: " << path << RESET << std::endl;
+        std::cerr << RED << "Path not found: " << path << RESET << std::endl;
         client->set_error_code("404");
         modifyEpollEvent(client_fd, EPOLLOUT); // should remove and leave it for the second if to take care?
         return 1;
