@@ -183,7 +183,7 @@ int Webserver::main_loop()
 				}
 				// 2. Handle CGI output (read)
 				else if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
-					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
+					std::shared_ptr<Client> client = this->cgi_fd_to_client_map[events[i].data.fd];
 					int result = client->handle_cgi_response(*client->get_cgi());
 					if (result == 1) {
 						close(events[i].data.fd);
