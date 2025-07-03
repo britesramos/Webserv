@@ -392,7 +392,7 @@ bool Webserver::is_server_fd(int fd){
 			return true;
 		}
 	}
-	std::cout << RED << "Socket fd is not a server socket fd: " << fd << std::endl;
+	std::cout << RED << "Socket fd is not a server socket fd: " << fd << RESET << std::endl;
 	return false;
 }
 
