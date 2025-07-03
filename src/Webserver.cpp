@@ -144,7 +144,7 @@ int Webserver::main_loop()
 			std::cout << "Event fd: " << events[i].data.fd << ", Events: " << events[i].events << std::endl;
 			//If the socket fd is the server socket fd there is a new connection:
 			if (is_server_fd(events[i].data.fd) == true){
-				if (accept_connection(this->_servers[i]) == 1)
+				if (accept_connection(*this->getServerBySocketFD(events[i].data.fd)) == 1)
 					return 1;
 			}
 			//If the socket fd is a client socket fd, there is a request to read or a response to send:
@@ -183,19 +183,19 @@ int Webserver::main_loop()
 				}
 				// 2. Handle CGI output (read)
 				else if (this->cgi_fd_to_client_map.count(events[i].data.fd)) {
-					std::shared_ptr<Client> client = this->cgi_fd_to_client_map[events[i].data.fd];
+					std::shared_ptr<Client>& client = this->cgi_fd_to_client_map[events[i].data.fd];
 					int result = client->handle_cgi_response(*client->get_cgi());
 					if (result == 1) {
-						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						close(events[i].data.fd);
+						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
 					}
 					else if (result == -1) {
 						std::cerr << RED << "Error reading from CGI pipe" << std::endl;
 						client->set_error_code("502");
-						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						close(events[i].data.fd);
+						this->cgi_fd_to_client_map.erase(events[i].data.fd);
 						modifyEpollEvent(client->get_Client_socket(), EPOLLOUT);
 						delete client->get_cgi();
 					}
@@ -364,14 +364,20 @@ int Webserver::build_response(int client_fd){
 	if (client->get_Request("method") == "GET"){
 		if (client->handle_get_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
+		// else
+		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
+		// else
+		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "DELETE"){
 		if (client->handle_delete_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
+		// else
+		// 	close_connection(client_fd);
 	}
 	return 0;
 }
@@ -394,6 +400,7 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if (method.empty()) {
 		std::cerr << RED << "Method not found in request" << RESET << std::endl;
 		client->set_error_code("400");
+		// modifyEpollEvent(client_fd, EPOLLOUT);
 		// delete cgi;
 		// client->set_cgi(nullptr);
 		return false;
@@ -401,6 +408,7 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
 	{
 		client->set_error_code("405");
+		// modifyEpollEvent(client_fd, EPOLLOUT);
 		// delete cgi;
 		// client->set_cgi(nullptr);
 		return false;
