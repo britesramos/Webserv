@@ -4,6 +4,10 @@ Webserv is a lightweight HTTP web server written entirely in **C++**, without ex
 It aims to implement core HTTP 1.1 functionality, handle multiple clients concurrently, and serve static as well as dynamic content through CGI.
 
 ![Webserver](https://github.com/user-attachments/assets/1e44ea7c-4efa-44f2-9313-49fc60f92ac3)
+---Fig1 | Understanding a Web server. ---
+
+![Epoll](https://github.com/user-attachments/assets/380b1d1c-210b-45d6-8f21-f000689816dd)
+---Fig2 | Understanding EPOLL API. ---
 
 ---
 
