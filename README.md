@@ -29,7 +29,7 @@ It aims to implement core HTTP 1.1 functionality, handle multiple clients concur
 ## 📷 Webserv in action
 
 
-https://github.com/user-attachments/assets/dffa0fb2-496c-4c5e-bdc4-8c5a7cfe5f32
+[![Webserv in action]](https://github.com/user-attachments/assets/dffa0fb2-496c-4c5e-bdc4-8c5a7cfe5f32)
 
 
 
