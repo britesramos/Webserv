@@ -22,7 +22,7 @@ It aims to implement core HTTP 1.1 functionality, handle multiple clients concur
   - Multiple servers and ports
   - Directory listing
   - HTTP redirects
-  - CGI execution (e.g. PHP, Python)
+  - CGI execution (Python)
 - Configuration file with:
   - Hosts, ports, and server names
   - Custom routes and methods
