@@ -67,15 +67,6 @@ bool Location::getAutoindex() const
 	return (this->autoindex);
 }
 
-// std::string Location::getReturnvalue(std::string code) const
-// {
-// 	auto temp = this->return_value.find(code);
-// 	if (temp != this->return_value.end()) // check if is not in the end of the map
-// 		return (temp->second);
-// 	else
-// 		return ("");
-// }
-
 std::pair<std::string, std::string> Location::getReturn() const {
     if (!return_value.empty())
         return *return_value.begin();

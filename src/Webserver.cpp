@@ -282,8 +282,8 @@ int Webserver::send_response(int client_fd){
 	int bytes_sent = send(client->get_Client_socket(), response.c_str(), response.size(), 0);
 	if (bytes_sent < 0){
 		std::cerr << RED << "Error sending response to client: " << client->get_Client_socket() << std::endl;
-		client->set_error_code("500"); //I am not sure if this can be checked. The way to send the response is trough send() if it doenst work for the correct response it will not work for the 500 html file either.
-		return 1; //Exit???
+		client->set_error_code("500");
+		return 1;
 	}
 	client->update_activity(); // for timeout checks
 	std::cout << GREEN << "Response sent to client: " << client->get_Client_socket() << std::endl;
@@ -328,7 +328,7 @@ static bool handle_autoindex(std::shared_ptr<Client>& client)
 }
 
 
-//Refactor this method. Not needing SUCCESS return anymore. I think.
+//TODO: Refactor this method. Not needing SUCCESS return anymore.
 int Webserver::build_response(int client_fd){
 	Server* server = getServerBySocketFD(this->client_server_map.find(client_fd)->second);
 	std::shared_ptr<Client>& client = server->getclient(client_fd);
@@ -348,14 +348,12 @@ int Webserver::build_response(int client_fd){
     if (access(path.c_str(), F_OK) != 0) {
         std::cerr << RED << "Path not found: " << path << RESET << std::endl;
         client->set_error_code("404");
-        modifyEpollEvent(client_fd, EPOLLOUT); // should remove and leave it for the second if to take care?
+        modifyEpollEvent(client_fd, EPOLLOUT);
         return 1;
     }
 	if (handle_autoindex(client) == false)
 	{
         modifyEpollEvent(client_fd, EPOLLOUT);
-		// send_response(client->get_Client_socket()); // modify to epoll was working the same
-		// close_connection(client->get_Client_socket());
 		return 0;
 	}
 
@@ -366,20 +364,14 @@ int Webserver::build_response(int client_fd){
 	if (client->get_Request("method") == "GET"){
 		if (client->handle_get_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "POST"){
 		if (client->handle_post_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	else if (client->get_Request("method") == "DELETE"){
 		if (client->handle_delete_request() == SUCCESS)
 			modifyEpollEvent(client_fd, EPOLLOUT);
-		// else
-		// 	close_connection(client_fd);
 	}
 	return 0;
 }
@@ -402,17 +394,11 @@ static bool is_method_correct(std::shared_ptr<Client>& client)
 	if (method.empty()) {
 		std::cerr << RED << "Method not found in request" << RESET << std::endl;
 		client->set_error_code("400");
-		// modifyEpollEvent(client_fd, EPOLLOUT);
-		// delete cgi;
-		// client->set_cgi(nullptr);
 		return false;
 	}
 	if ((method == "POST" && !client->get_cgi()->get_method_post()) || (method == "GET" && !client->get_cgi()->get_method_get()) || (method == "DELETE" && !client->get_cgi()->get_method_del()))
 	{
 		client->set_error_code("405");
-		// modifyEpollEvent(client_fd, EPOLLOUT);
-		// delete cgi;
-		// client->set_cgi(nullptr);
 		return false;
 	}
 	return true;
@@ -425,8 +411,6 @@ static bool is_cgi_path_valid(std::shared_ptr<Client>& client)
 	if (access(cgi_script_path.c_str(), F_OK) != 0) {
 		std::cerr << RED << "CGI script not found: " << cgi_script_path << RESET << std::endl;
 		client->set_error_code("404");
-		// delete cgi;
-		// client->set_cgi(nullptr);
 		return false;
 	}
 	if (url_path.size() >= 3 && url_path.compare(url_path.size() - 3, 3, ".py") != 0){
@@ -580,7 +564,7 @@ int Webserver::process_request(int client_fd){
         return 0; // Still receiving headers
     }
 	else {//Ready to process request. Received the entire request.
-		// std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
+		std::cout << "REQUEST: " << client->get_requestBuffer() << std::endl;
 		//Parse client request into correct client object:
 		if (client->parseClientRequest() == -1){
             modifyEpollEvent(client_fd, EPOLLOUT);

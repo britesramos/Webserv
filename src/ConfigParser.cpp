@@ -5,7 +5,7 @@ ConfigParser::ConfigParser()
 	this->number_of_server = 0;
 }
 
-ConfigParser::~ConfigParser() // this is still being called ?
+ConfigParser::~ConfigParser()
 {
 	this->servers.clear();
 	this->lines.clear();
@@ -331,5 +331,4 @@ void ConfigParser::clean_up(){
 	this->lines.clear();
 	this->servers.clear();
 	this->number_of_server = 0;
-	// std::cout << "ConfigParser cleaned up." << std::endl;
 }

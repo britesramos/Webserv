@@ -51,8 +51,6 @@ int main(int argc, char **argv)
 			return (1);
 		}
 
-		// webserver.printServerFDs(); //temp
-
 		// //2)Add server sockets to epoll interest list:
 		if (webserver.addServerSockets() == 1)
 		{
@@ -65,7 +63,6 @@ int main(int argc, char **argv)
 		{
 			webserver.clean_up();
             file.clean_up();
-			//Don't these are closed once the objects are destroyed?
 			return (1);
 		}
 	}

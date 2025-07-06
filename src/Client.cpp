@@ -5,23 +5,12 @@ Client::Client(int socket_fd, ServerConfig& server_config):_Client_socket(socket
 	this->_error_code = "200";
 	this->last_activity = std::chrono::steady_clock::now();
 	std::cout << GREEN << "Client Request received -- " << this->_Client_socket << std::endl;
-	// this->cgi = new Cgi();
 }
 
 Client::~Client(){
 	std::cout << "Client Request ---" << this->_Client_socket << "--- closed" << std::endl;
-	// if (this->_Client_socket != -1)
-	// 	close(this->_Client_socket);
 	delete this->cgi;
 }
-
-// Client::Client(const Client& other){
-// 	this->_Client_socket = other._Client_socket;
-// 	this->_error_code = other._error_code;
-// 	this->_Client_RequestMap = other._Client_RequestMap;
-// 	this->_response = other._response;
-// 	this->_server_config = other._server_config;
-// }
 
 Client& Client::operator=(const Client& other){
 	if (this != &other)
@@ -146,7 +135,6 @@ int Client::parseClientRequest(){
 }
 
 //Building response methods:
-
 int Client::handle_get_request(){
 	std::string url_path = this->get_Request("url_path");
 	if (is_method_allowed(url_path, "GET") == true){

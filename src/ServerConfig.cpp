@@ -49,7 +49,6 @@ void ServerConfig::setErrorPage(std::string error_number, std::string page)
 void ServerConfig::addLocation(std::string path, Location& location)
 {
 	this->location_blocks.insert(std::make_pair(path, location));
-	// this->location_blocks.push_back(location);
 }
 
 

@@ -57,9 +57,6 @@ void Cgi::creating_cgi_env(Client &client)
 	for (size_t i = 0; i < this->tmp_env.size(); ++i)
 		this->env.push_back(const_cast<char*>(this->tmp_env[i].c_str()));
 	this->env.push_back(nullptr);
-
-	// for (size_t i = 0; i < this->env.size(); ++i)
-    // std::cerr <<  YELLOW <<"			CGI ENV: " << this->env[i] << std::endl;
 }
 
 void Cgi::start_cgi(Location config)
