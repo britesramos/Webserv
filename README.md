@@ -13,7 +13,7 @@ It aims to implement core HTTP 1.1 functionality, handle multiple clients concur
 
 ## 🚀 Features
 
-- Non-blocking HTTP server using `epoll()`
+- Non-blocking HTTP server using `epoll API`
 - Supports:
   - **GET**, **POST**, and **DELETE** methods
   - Serving static files
