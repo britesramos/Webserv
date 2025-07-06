@@ -3,6 +3,8 @@
 Webserv is a lightweight HTTP web server written entirely in **C++**, without external libraries, developed as part of a Codam project in collaboration with @edooarda.  
 It aims to implement core HTTP 1.1 functionality, handle multiple clients concurrently, and serve static as well as dynamic content through CGI.
 
+![Webserver](https://github.com/user-attachments/assets/1e44ea7c-4efa-44f2-9313-49fc60f92ac3)
+
 ---
 
 ## 🚀 Features
