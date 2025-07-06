@@ -26,11 +26,16 @@ It aims to implement core HTTP 1.1 functionality, handle multiple clients concur
 
 ---
 
-## 📷 Screenshots
+## 📷 Webserv in action
 
-*(Add screenshots or terminal output if you have any. E.g.:)*
 
-![Webserv in action](./screenshots/server_running.png)
+https://github.com/user-attachments/assets/dffa0fb2-496c-4c5e-bdc4-8c5a7cfe5f32
+
+
+
+https://github.com/user-attachments/assets/3072a0be-83cb-4958-88c9-5176ef926833
+
+
 
 ---
 
